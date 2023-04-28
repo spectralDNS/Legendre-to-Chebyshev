@@ -18,7 +18,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
@@ -26,6 +25,7 @@ jobs:
         cache: 'pip'
     - run: |
         pip install numpy cython ninja meson
+        cd C
         meson setup build
         meson compile
         meson test
