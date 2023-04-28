@@ -28,6 +28,9 @@ jobs:
         echo $CONDA/bin >> $GITHUB_PATH
     - name: Install dependencies
       run: |
+        conda config --add channels conda-forge
+        conda config --set always_yes yes
+        conda install compilers
         conda env update --file environment.yml --name base
     - run: |
         cd C
