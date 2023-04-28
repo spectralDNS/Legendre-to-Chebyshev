@@ -1,0 +1,13 @@
+name: l2c
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - pip
+  - numpy
+  - cython
+  - fftw
+  - openblas
+  
