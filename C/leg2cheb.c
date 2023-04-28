@@ -403,8 +403,10 @@ double sum(const double* a, const size_t N)
 
 void free_fmm(fmm_plan* plan)
 {
-    free(plan->A[0]);
-    free(plan->A[1]);
+    if (plan->A[0] != NULL)
+        free(plan->A[0]);
+    if (plan->A[1] != NULL)
+        free(plan->A[1]);
     free(plan->A);
     free(plan->a);
     free(plan->an);
@@ -471,6 +473,8 @@ fmm_plan* create_fmm(size_t N, size_t maxs, unsigned direction)
     gettimeofday(&t1, 0);
 
     double** A = (double**)malloc(2*sizeof(double*));
+    A[0] = NULL;
+    A[1] = NULL;
     if (direction == 2)
     {
         A[0] = (double *)malloc(get_number_of_submatrices(Nn, s, L)*M*M*sizeof(double));
