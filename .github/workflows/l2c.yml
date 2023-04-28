@@ -29,6 +29,7 @@ jobs:
     - name: Install dependencies
       run: |
         conda config --add channels conda-forge
+        conda config --set always_yes yes
         conda install compilers
         conda env update --file environment.yml --name base
     - run: |
