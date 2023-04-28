@@ -1,0 +1,31 @@
+name: L2C-CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
+        python-version: ["3.9", "3.10"]
+    name: Python ${{ matrix.python-version }} example
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v1
+    - uses: BSFishy/meson-build@v1.0.3
+    - name: Build
+      uses: ./
+      with:
+        action: build
+    - name: Test
+      uses: ./
+      with:
+        action: test
+    
