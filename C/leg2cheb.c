@@ -484,7 +484,6 @@ fmm_plan* create_fmm(size_t N, size_t maxs, unsigned direction)
     {
         A[direction] = (double *)malloc(get_number_of_submatrices(Nn, s, L)*M*M*sizeof(double));
     }
-
     double* a = (double*)malloc(N*sizeof(double));
     double* dn = (double*)malloc(N/2*sizeof(double));
     double* an = (double*)malloc(N*sizeof(double));

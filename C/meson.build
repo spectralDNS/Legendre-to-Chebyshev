@@ -14,6 +14,7 @@ cc = meson.get_compiler('c')
 m_dep = cc.find_library('m', required : true)
 deps = [cblas, fftw, omp, m_dep]
 add_global_arguments('-DTRI', language : 'c')
+add_global_arguments('-fno-builtin', language : 'c')
 
 install_headers('leg2cheb.h')
 
