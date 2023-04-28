@@ -13,19 +13,19 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macOS-latest]
-        python-version: ["3.9", "3.10"]
+        python-version: ["3.9"]
     name: Python ${{ matrix.python-version }} example
 
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v1
-    - uses: BSFishy/meson-build@v1.0.3
-    - name: Build
-      uses: ./
+    - uses: actions/checkout@v3
+    - name: Setup Python
+      uses: actions/setup-python@v4
       with:
-        action: build
-    - name: Test
-      uses: ./
-      with:
-        action: test
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    - run: |
+        pip install numpy cython ninja meson
+        meson setup build
+        meson compile
+        meson test
     
