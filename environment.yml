@@ -12,3 +12,4 @@ dependencies:
   - openblas
   - meson
   - ninja
+  - pkg-config
