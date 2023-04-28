@@ -1,5 +1,6 @@
 #include "leg2cheb.h"
 
+
 long lmin(long a, long b){
     return (a > b) ? b : a;
 }
@@ -462,7 +463,6 @@ fmm_plan* create_fmm(size_t N, size_t maxs, unsigned direction)
     fmmplan.N = N;
     fmmplan.Nn = Nn;
     fmmplan.s = s;
-
     printf("N %lu\n", N);
     printf("Num levels %lu\n", L);
     printf("Num submatrices %lu\n", get_number_of_submatrices(Nn, s, L));
