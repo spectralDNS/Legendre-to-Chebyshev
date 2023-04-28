@@ -9,12 +9,10 @@ cython = find_program(cy.cmd_array()[0])
 
 cblas = dependency('openblas')
 fftw = dependency('fftw3')
-omp = dependency('openmp')
 cc = meson.get_compiler('c')
-m_dep = cc.find_library('m', required : true)
-deps = [cblas, fftw, omp, m_dep]
+#m_dep = cc.find_library('m', required : true)
+deps = [cblas, fftw]
 add_global_arguments('-DTRI', language : 'c')
-add_global_arguments('-fno-builtin', language : 'cython')
 
 install_headers('leg2cheb.h')
 

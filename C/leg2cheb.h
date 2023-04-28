@@ -9,7 +9,6 @@
 #include <assert.h>
 #include <string.h>
 #include <cblas.h>
-#include <omp.h>
 #include "fftw3.h"
 
 
