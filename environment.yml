@@ -10,4 +10,5 @@ dependencies:
   - cython
   - fftw
   - openblas
-  
+  - meson
+  - ninja
