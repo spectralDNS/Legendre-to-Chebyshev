@@ -32,6 +32,7 @@ jobs:
     - run: |
         cd C
         meson setup build
+        cd build
         meson compile
         meson test
     
