@@ -2,7 +2,7 @@ project('leg2cheb', 'c', 'cython',
         version : '1.0',
         default_options : [
           'buildtype=debugoptimized',
-          #'c_link_args=-lm',
+          'c_link_args=-lc',
           'warning_level=3'])
 
 cy = meson.get_compiler('cython')
