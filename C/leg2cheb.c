@@ -1,5 +1,6 @@
 #include "leg2cheb.h"
 
+
 long lmin(long a, long b){
     return (a > b) ? b : a;
 }
