@@ -10,7 +10,6 @@ py.extension_module(
     'l2c.pyx',
     install : true,
     include_directories: incdir_numpy,
-    #link_args : ['-lm', '-lc'],
-    dependencies : [dep_py,fftw,cblas,libm],
+    dependencies : [dep_py,fftw,cblas],
     link_with : l2clib
 )
