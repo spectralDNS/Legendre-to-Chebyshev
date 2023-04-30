@@ -2,7 +2,6 @@ project('leg2cheb', 'c', 'cython',
         version : '1.0',
         default_options : [
           'buildtype=debugoptimized',
-          'c_link_args=-lc',
           'warning_level=3'])
 
 cy = meson.get_compiler('cython')
@@ -12,6 +11,7 @@ cblas = dependency('openblas')
 fftw = dependency('fftw3')
 deps = [cblas, fftw]
 add_global_arguments('-DTRI', language : 'c')
+add_global_link_arguments('-lm', language : 'c')
 
 install_headers('leg2cheb.h')
 
