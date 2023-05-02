@@ -11,7 +11,7 @@ dependencies:
   - cython
   - fftw
   - openblas
-  - openlibm
+  - pytest
   - meson
   - ninja
   - pkg-config
