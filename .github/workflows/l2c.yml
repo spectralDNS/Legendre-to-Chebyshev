@@ -33,7 +33,7 @@ jobs:
         conda env update --file environment.yml --name base
     - run: |
         cd src
-        meson setup build
+        meson setup build --prefix=$PWD/build-install
+        export PYTHONPATH=$PYTHONPATH:$PWD/build-install/lib/python{{ matrix.python.version }}/site-packages
         meson install -C build
-        meson compile -v -C build
         meson test -v -C build
