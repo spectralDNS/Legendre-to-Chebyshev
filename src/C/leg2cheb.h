@@ -45,7 +45,8 @@ size_t direct(const double *input_array, double *output_array,
 size_t execute(const double *input_array, double *output_array,
                fmm_plan *fmmplan, unsigned direction);
 double tdiff_sec(struct timeval t0, struct timeval t1);
-double Lambda(const double z);
+double _Lambda(const double z);
+void __Lambda(const double* z, double* w, size_t N);
 size_t get_number_of_blocks(const size_t level);
 size_t get_h(const size_t level, const size_t L);
 size_t get_number_of_submatrices(const size_t N, const size_t s,

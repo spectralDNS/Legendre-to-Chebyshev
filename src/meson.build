@@ -10,18 +10,11 @@ cython = find_program(cy.cmd_array()[0])
 cblas = dependency('openblas')
 fftw = dependency('fftw3')
 deps = [cblas, fftw]
-add_global_arguments('-DTRI', language : 'c')
-add_global_link_arguments('-lm', language : 'c')
 
-install_headers('leg2cheb.h')
-
-l2clib = library('leg2cheb',
-                 'leg2cheb.c',
-                 install : true,
-                 dependencies : deps)
-
-subdir('tests')
+subdir('C')
 subdir('cython')
+subdir('tests')
+subdir('bin')
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libraries : l2clib,

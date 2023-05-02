@@ -1,5 +1,5 @@
 import numpy as np
-from shenfun.utilities import Lambda
+from l2c import Lambda
 from mpi4py_fft import fftw
 from numpy.polynomial.chebyshev import chebvander
 import numba as nb
@@ -134,17 +134,19 @@ class Cheb2Leg(Leg2Cheb):
 
 if __name__ == '__main__':
     from shenfun import legendre
-    N = 200
-    #u = np.random.random(N)
+    N = 500
     u = np.ones(N)
     L2C = Leg2Cheb(u)
     C2L = Cheb2Leg(u)
     a = np.zeros(N)
     b = np.zeros(N)
-    a = legendre.leg2cheb(u, a, axis=0, transpose=False)
+    a = legendre.leg2cheb(u, a, axis=0)
     b = legendre.cheb2leg(a, b, axis=0)
     a1 = L2C(u)
     a2 = C2L(a1)
-    print(f'Errornorm direct: {np.linalg.norm(b-u, np.inf):2.6e}')
-    print(f'Errornorm FMM   : {np.linalg.norm(a2-u, np.inf):2.6e}')
+    error_d = np.linalg.norm(b-u, np.inf)
+    error_f = np.linalg.norm(a2-u, np.inf)
+    assert error_d < 1e-8 and error_f < 1e-8
+    print(f'Errornorm direct: {error_d:2.6e}')
+    print(f'Errornorm FMM   : {error_f:2.6e}')
 

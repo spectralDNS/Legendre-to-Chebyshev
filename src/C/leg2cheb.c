@@ -35,7 +35,12 @@ double chebval(const double x, const double *c, size_t M) {
   return c0 + c1 * x;
 }
 
-double Lambda(const double z) {
+void __Lambda(const double* z, double* w, size_t N){
+  for (size_t i = 0; i < N; i++)
+    w[i] = _Lambda(z[i]);
+}
+
+double _Lambda(const double z) {
   double a0[8] = {9.9688251374224490e-01,  -3.1149502185860763e-03,
                   2.5548605043159494e-06,  1.8781800445057731e-08,
                   -4.0437919461099256e-11, -9.0003384202201278e-13,
@@ -47,12 +52,12 @@ double Lambda(const double z) {
 }
 
 double mxy(const double *x, const double *y) {
-  return Lambda(((*y) - (*x)) / 2) * Lambda(((*y) + (*x)) / 2);
+  return _Lambda(((*y) - (*x)) / 2) * _Lambda(((*y) + (*x)) / 2);
 }
 
 double lxy(const double *x, const double *y) {
   return -1.0 / (((*x) + (*y) + 1) * ((*y) - (*x))) *
-         Lambda(((*y) - (*x) - 2) / 2) * Lambda(((*y) + (*x) - 1) / 2);
+         _Lambda(((*y) - (*x) - 2) / 2) * _Lambda(((*y) + (*x) - 1) / 2);
 }
 
 double tdiff_sec(struct timeval t0, struct timeval t1) {
@@ -369,7 +374,7 @@ direct_plan *create_direct(size_t N, unsigned direction) {
   if (direction == L2C | direction == BOTH) {
     double *a = (double *)malloc(N * sizeof(double));
     for (size_t i = 0; i < N; i++)
-      a[i] = Lambda(i);
+      a[i] = _Lambda(i);
     dplan.a = a;
   }
   if (direction == C2L | direction == BOTH) {
@@ -378,9 +383,9 @@ direct_plan *create_direct(size_t N, unsigned direction) {
     dn[0] = 0;
     an[0] = 2 / sqrt(M_PI);
     for (size_t i = 1; i < N; i++)
-      an[i] = 1 / (2 * Lambda(i) * i * (i + 0.5));
+      an[i] = 1 / (2 * _Lambda(i) * i * (i + 0.5));
     for (size_t i = 1; i < N / 2; i++)
-      dn[i] = Lambda((double)(2 * i - 2) / 2.0) / (2 * i);
+      dn[i] = _Lambda((double)(2 * i - 2) / 2.0) / (2 * i);
     dplan.an = an;
     dplan.dn = dn;
   }
@@ -451,6 +456,7 @@ fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction) {
     A[direction] = (double *)malloc(get_number_of_submatrices(Nn, s, L) * M *
                                     M * sizeof(double));
   }
+
   fmmplan.dplan = create_direct(N, direction);
   double *xj = (double *)malloc(M * sizeof(double));
   for (size_t i = 0; i < M; i++)
