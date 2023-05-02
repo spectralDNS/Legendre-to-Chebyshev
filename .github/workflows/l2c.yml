@@ -32,6 +32,7 @@ jobs:
         conda config --set always_yes yes
         conda env update --file environment.yml --name base
     - run: |
+        cd src
         meson setup build
         meson install -C build
         meson compile -v -C build
