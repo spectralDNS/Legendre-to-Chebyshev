@@ -9,7 +9,6 @@ py = import('python').find_installation()
 test('pytests',
      py,
      args: [
-       '-m', 'pytest',
        'test.py',
      ],
      workdir: meson.current_source_dir())
