@@ -34,9 +34,9 @@ jobs:
         conda env update --file environment.yml --name l2c
     - run: |
         cd src
-        conda activate l2c
+        source activate l2c
         conda install pytest
         meson setup build --prefix=$PWD/build-install
         export PYTHONPATH=$PYTHONPATH:$PWD/build-install/lib/python${{ matrix.python-version }}/site-packages
         meson install -C build
-        meson test -v -C build
+        meson test -v --print-errorlogs --gdb -C build
