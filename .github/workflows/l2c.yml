@@ -31,10 +31,10 @@ jobs:
         conda config --add channels conda-forge
         conda config --set always_yes yes
         conda create -n l2c python=${{ matrix.python-version }}
-        source activate l2c
         conda env update --file environment.yml --name l2c
     - run: |
         cd src
+        source activate l2c
         meson setup build --prefix=$PWD/build-install
         export PYTHONPATH=$PYTHONPATH:$PWD/build-install/lib/python${{ matrix.python-version }}/site-packages
         meson install -C build
