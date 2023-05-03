@@ -11,7 +11,6 @@ def test_accuracy(N):
     b = C(u, b, 0)
     c = C(b, c, 1)
     assert np.linalg.norm(c-1) < 1e-8
-    del C
 
 if __name__ == '__main__':
     test_accuracy(1000)
