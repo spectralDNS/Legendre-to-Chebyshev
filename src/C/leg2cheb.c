@@ -418,7 +418,7 @@ direct_plan *create_direct(size_t N, unsigned direction) {
   return &dplan;
 }
 
-fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction) {
+fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction, size_t v) {
   size_t M = 18;
   fftw_plan plan, plan1d;
   static fmm_plan fmmplan = {0,    0,    0,    0,    0,    0,
@@ -449,7 +449,8 @@ fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction) {
 
   L = ceil(log2((double)N / (double)maxs)) - 2;
   if (L < 1) {
-    printf("Levels < 1. Try smaller maxs. Exiting...\n");
+    if (v > 1)
+      printf("Levels < 1. Try smaller maxs. Exiting...\n");
     exit(-1);
   }
 
@@ -460,14 +461,16 @@ fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction) {
   fmmplan.N = N;
   fmmplan.Nn = Nn;
   fmmplan.s = s;
-  printf("N %lu\n", N);
-  printf("Num levels %lu\n", L);
-  printf("Num submatrices %lu\n", get_number_of_submatrices(Nn, s, L));
-  printf("Given max s %lu \n", maxs);
-  printf("Computed s %lu \n", s);
-  printf("Computed N %lu\n", Nn);
+  if (v > 1)
+  {
+    printf("N %lu\n", N);
+    printf("Num levels %lu\n", L);
+    printf("Num submatrices %lu\n", get_number_of_submatrices(Nn, s, L));
+    printf("Given max s %lu \n", maxs);
+    printf("Computed s %lu \n", s);
+    printf("Computed N %lu\n", Nn);
+  }
   gettimeofday(&t1, 0);
-
   double **A = (double **)malloc(2 * sizeof(double *));
   A[0] = NULL;
   A[1] = NULL;
@@ -534,7 +537,6 @@ fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction) {
     }
   }
   fmmplan.A = A;
-
   double *T = (double *)malloc(2 * s * M * sizeof(double));
   double *TT = (double *)malloc(2 * s * M * sizeof(double));
   vandermonde(T, s, M);
@@ -579,7 +581,8 @@ fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction) {
   fmmplan.Th = Th;
   fmmplan.ThT = ThT;
   gettimeofday(&t2, 0);
-  printf("Initialization %2.4e s\n", tdiff_sec(t1, t2));
+  if (v > 1)
+    printf("Initialization %2.4e s\n", tdiff_sec(t1, t2));
   return &fmmplan;
 }
 

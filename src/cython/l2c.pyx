@@ -15,18 +15,20 @@ cdef class Leg2Cheb:
         int N
         int use_direct
         int direction
+        int verbose
         np.ndarray _input_array
         np.ndarray _output_array
 
     def __cinit__(self, input_array : np.ndarray, output_array : np.ndarray,
-                  maxs : int, direction : int, use_direct : int):
+                  maxs : int=36, direction : int=2, use_direct : int=500, verbose : int=1):
         self.N = input_array.shape[0]
         self.use_direct = use_direct
         self.direction = direction
+        self.verbose = verbose
         if self.N < use_direct:
             self.plan = <l2c.direct_plan*>l2c.create_direct(self.N, direction)
         else:
-            self.plan = <l2c.fmm_plan*>l2c.create_fmm(self.N, maxs, direction)
+            self.plan = <l2c.fmm_plan*>l2c.create_fmm(self.N, maxs, direction, verbose)
         self._input_array = input_array
         self._output_array = output_array
 

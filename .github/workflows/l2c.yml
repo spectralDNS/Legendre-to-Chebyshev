@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macOS-latest]
-        python-version: ["3.8", "3.9"]
+        python-version: ["3.8", "3.9", "3.10"]
     name: Python ${{ matrix.python-version }} example
 
     steps:
@@ -39,4 +39,4 @@ jobs:
         meson setup build --prefix=$PWD/build-install
         export PYTHONPATH=$PYTHONPATH:$PWD/build-install/lib/python${{ matrix.python-version }}/site-packages
         meson install -C build
-        meson test -v --print-errorlogs -C build
+        meson test -v -C build

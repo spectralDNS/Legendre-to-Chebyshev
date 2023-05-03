@@ -7,40 +7,36 @@ int main(int argc, char *argv[])
     int opt;
     size_t N;
     size_t maxs = 36;
-    size_t m = 0;
+    size_t v = 0;
+    double m = 0;
     size_t repeat = 1;
-    size_t num_threads = 1;
     unsigned direction = 0;
     char *help = "Usage: ./l2c options\n"
                  "  -h      Show this message\n"
                  "  -N      Size of transform\n"
                  "  -s      Estimated max size of smallest submatrix  (optional, default=36)\n"
-                 "  -m      Data decay coefficient. "
+                 "  -m      Data decay coefficient. \n"
                  "  -r      Repeat computation this many times (for timing, default=1)\n"
+                 "  -v      Level of verbosity\n"
                  "  -d      Direction of transform. 0 for Legendre to Chebyshev,\n"
-                 "          1 for Chebyshev to Legendre and 2 use both and check accuracy";
+                 "          1 for Chebyshev to Legendre and 2 use both and check accuracy\n";
 
-    while ((opt = getopt(argc, argv, "N:d:s::m::r::h")) != -1)
+    while ((opt = getopt(argc, argv, "N:d:s::m::r::v:h")) != -1)
     {
        switch (opt)
        {
         case 'N':
-          printf("Option N has arg: %s\n", optarg);
           N = atoi(optarg);
           break;
         case 's':
-          printf("Option s has arg: %s\n", optarg);
           maxs = atoi(optarg);
           break;
         case 'm':
-          printf("Option m has arg: %s\n", optarg);
-          m = atoi(optarg);
+          m = atof(optarg);
         case 'r':
-          printf("Option r has arg %s\n", optarg);
           repeat = atoi(optarg);
           break;
         case 'd':
-          printf("Option d has arg %s\n", optarg);
           direction = atoi(optarg);
           break;
         case 'h':
@@ -52,7 +48,7 @@ int main(int argc, char *argv[])
           exit(-1);
        }
     }
-    fmm_plan* fmmplan = create_fmm(N, maxs, direction);
+    fmm_plan* fmmplan = create_fmm(N, maxs, direction, v);
     double* input_array=(double *)calloc(fmmplan->Nn, sizeof(double));
     double* output_array=(double *)calloc(fmmplan->Nn, sizeof(double));
     for (size_t i = 0; i < N; i++)

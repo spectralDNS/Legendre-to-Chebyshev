@@ -38,13 +38,14 @@ typedef struct {
 
 void free_fmm(fmm_plan *plan);
 void free_direct(direct_plan *dplan);
-fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction);
+fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction, size_t v);
 direct_plan *create_direct(size_t N, unsigned direction);
 size_t direct(const double *input_array, double *output_array,
               direct_plan *dplan, unsigned direction);
 size_t execute(const double *input_array, double *output_array,
                fmm_plan *fmmplan, unsigned direction);
 double tdiff_sec(struct timeval t0, struct timeval t1);
+double norm(const double *a, const size_t N);
 double _Lambda(const double z);
 void __Lambda(const double* z, double* w, size_t N);
 size_t get_number_of_blocks(const size_t level);
