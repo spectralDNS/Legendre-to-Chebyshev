@@ -35,7 +35,7 @@ jobs:
     - run: |
         cd src
         source activate l2c
-        #pip install pytest
+        pip install pytest
         meson setup build --prefix=$PWD/build-install
         export PYTHONPATH=$PYTHONPATH:$PWD/build-install/lib/python${{ matrix.python-version }}/site-packages
         meson install -C build

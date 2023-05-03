@@ -1,8 +1,8 @@
 import numpy as np
 import l2c
-#import pytest
+import pytest
 
-#@pytest.mark.parametrize('N', (1000, 5000, 10000))
+@pytest.mark.parametrize('N', (1000, 5000, 10000))
 def test_accuracy(N):
     u = np.ones(N)
     b = np.zeros_like(u)

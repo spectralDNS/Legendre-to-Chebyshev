@@ -172,7 +172,7 @@ size_t directM(double *input_array, double *output_array, fmm_plan *fmmplan) {
 
 size_t directL(double *input_array, double *output_array, fmm_plan *fmmplan) {
   size_t s = fmmplan->s;
-  size_t N = fmmplan->Nn;
+  size_t N = fmmplan->N;
   double *an = fmmplan->dplan->an;
   double *dn = fmmplan->dplan->dn;
   double SPI = sqrt(M_PI);
