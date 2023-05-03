@@ -8,4 +8,4 @@ l2c = executable('l2c',
                  install_rpath : lib_dir,
                  link_with : l2clib)
 
-test('test l2c', l2c, args : ['-N1000'])
+test('test l2c', l2c, args : ['-N1000', '-d2'])
