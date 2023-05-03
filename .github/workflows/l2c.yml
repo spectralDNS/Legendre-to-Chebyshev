@@ -30,8 +30,8 @@ jobs:
       run: |
         conda config --add channels conda-forge
         conda config --set always_yes yes
-        conda env create --name l2c python=${{ matrix.python-version }} --file environment.yml
-        source activate l2c
+        conda env update python=${{ matrix.python-version }} --name base
+        conda env update --file environment.yml --name base
     - run: |
         cd src
         meson setup build --prefix=$PWD/build-install
