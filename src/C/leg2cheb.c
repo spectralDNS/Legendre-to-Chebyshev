@@ -361,12 +361,36 @@ void free_fmm(fmm_plan *plan) {
     free(plan->A[1]);
     plan->A[1] = NULL;
   }
-  free(plan->A);
-  free(plan->T);
-  free(plan->TT);
-  free(plan->Th);
-  free(plan->ThT);
-  free_direct(plan->dplan);
+  if (plan->A != NULL)
+  {
+    free(plan->A);
+    plan->A = NULL;
+  }
+  if (plan->T != NULL)
+  {
+    free(plan->T);
+    plan->T = NULL;
+  }
+  if (plan->TT != NULL)
+  {
+    free(plan->TT);
+    plan->TT = NULL;
+  }
+  if (plan->Th != NULL)
+  {
+    free(plan->Th);
+    plan->Th = NULL;
+  }
+  if (plan->ThT != NULL)
+  {
+    free(plan->ThT);
+    plan->ThT = NULL;
+  }
+  if (plan->dplan != NULL)
+  {
+    free_direct(plan->dplan);
+    plan->dplan = NULL;
+  }
 }
 
 direct_plan *create_direct(size_t N, unsigned direction) {
