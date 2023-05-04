@@ -38,7 +38,7 @@ jobs:
         pip install pytest
         meson setup build --prefix=$PWD/build-install
         export PYTHONPATH=$PYTHONPATH:$PWD/build-install/lib/python${{ matrix.python-version }}/site-packages
-        echo $CXXFLAGS -I$CONDA_PREFIX/l2c/include
-        export CXXFLAGS=$CXXFLAGS' '-I$CONDA_PREFIX/l2c/include
-        meson install -v -C build
+        echo $CXXFLAGS -I$CONDA_PREFIX/include
+        export CXXFLAGS=$CXXFLAGS' '-I$CONDA_PREFIX/include
+        meson install -C build
         meson test -v -C build
