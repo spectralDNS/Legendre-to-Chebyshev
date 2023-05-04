@@ -8,6 +8,7 @@ template <class T> T Lambda(T z) {
   return boost::math::tgamma(z + T(0.5)) / boost::math::tgamma(z + 1);
 }
 
+
 template <class T> void leg2cheb(T *u, T *b, size_t N) {
   T *a = (T *)malloc(N * sizeof(T));
   T pi = boost::math::constants::pi<T>();
