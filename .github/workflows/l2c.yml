@@ -36,7 +36,7 @@ jobs:
         cd src
         source activate l2c
         pip install pytest
-        CFLAGS=-I$CONDA_PREFIX/include meson setup build --prefix=$PWD/build-install
+        meson setup build --prefix=$PWD/build-install --includedir=$CONDA_PREFIX/include
         export PYTHONPATH=$PYTHONPATH:$PWD/build-install/lib/python${{ matrix.python-version }}/site-packages
         meson install -C build
         meson test -v -C build
