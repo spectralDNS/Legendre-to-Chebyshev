@@ -133,20 +133,13 @@ class Cheb2Leg(Leg2Cheb):
         return output_array[:N].copy()
 
 if __name__ == '__main__':
-    from shenfun import legendre
     N = 500
     u = np.ones(N)
     L2C = Leg2Cheb(u)
     C2L = Cheb2Leg(u)
-    a = np.zeros(N)
-    b = np.zeros(N)
-    a = legendre.leg2cheb(u, a, axis=0)
-    b = legendre.cheb2leg(a, b, axis=0)
     a1 = L2C(u)
     a2 = C2L(a1)
-    error_d = np.linalg.norm(b-u, np.inf)
     error_f = np.linalg.norm(a2-u, np.inf)
-    assert error_d < 1e-8 and error_f < 1e-8
-    print(f'Errornorm direct: {error_d:2.6e}')
-    print(f'Errornorm FMM   : {error_f:2.6e}')
+    assert error_f < 1e-8
+    print(f'Errornorm pure Python  : {error_f:2.6e}')
 

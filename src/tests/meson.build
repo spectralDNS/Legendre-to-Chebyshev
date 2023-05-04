@@ -3,10 +3,10 @@ l2ctest = executable('l2ctest',
                      include_directories : '../C',
                      dependencies : deps,
                      link_with : l2clib)
-test('test lib', l2ctest)
+test('test libleg2cheb', l2ctest)
 
 py = import('python').find_installation()
-test('pytests',
+test('test cython',
      py,
      args: [
        'test.py',

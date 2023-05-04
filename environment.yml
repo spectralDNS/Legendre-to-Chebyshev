@@ -13,3 +13,5 @@ dependencies:
   - meson
   - ninja
   - pkg-config
+  - mpmath
+  - boost

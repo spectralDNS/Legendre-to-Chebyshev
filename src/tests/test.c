@@ -18,8 +18,8 @@ void test_foreward_backward(size_t N, size_t maxs, size_t verbose) {
     error += pow(input_array[j] - ia[j], 2);
   if (verbose > 0)
   {
-    printf("L2 Error = %2.4e \n", sqrt(error));
-    printf("Flops %lu\n\n", flops);
+    printf("N %6d L2 Error = %2.4e \n", N, sqrt(error));
+    printf("            Flops = %lu\n\n", flops);
   }
   assert(error < 1e-10);
   free(ia);
@@ -51,7 +51,7 @@ void test_speed(size_t N, size_t maxs, size_t repeat, unsigned direction, size_t
   }
   gettimeofday(&t1, 0);
   if (verbose > 0)
-    printf("Timing avg / min = %2.4e / %2.4e \n", tdiff_sec(t0, t1) / repeat,
+    printf("Timing N %6d avg / min = %2.4e / %2.4e \n", N, tdiff_sec(t0, t1) / repeat,
            min_time);
   free(input_array);
   free(output_array);
