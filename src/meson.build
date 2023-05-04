@@ -8,7 +8,6 @@ cy = meson.get_compiler('cython')
 cpp = meson.get_compiler('cpp')
 cython = find_program(cy.cmd_array()[0])
 
-#boost = dependency('boost')
 cblas = dependency('openblas')
 fftw = dependency('fftw3')
 deps = [cblas, fftw]
