@@ -42,7 +42,7 @@ jobs:
         export CXXFLAGS=$CXXFLAGS' '-I$CONDA_PREFIX/include
         echo $CXXFLAGS
         export CFLAGS=$CFLAGS' '-I$CONDA_PREFIX/include
-        export $CFLAGS
+        echo $CFLAGS
         ls $CONDA_PREFIX/include
         meson install -C build
         meson test -v -C build
