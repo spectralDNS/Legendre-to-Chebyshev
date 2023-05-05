@@ -11,6 +11,9 @@ cython = find_program(cy.cmd_array()[0])
 cblas = dependency('openblas')
 fftw = dependency('fftw3')
 deps = [cblas, fftw]
+add_global_arguments('-DTRI', language : 'c')
+add_global_link_arguments('-lm', language : 'c')
+add_global_arguments('-I/usr/share/miniconda/envs/l2c/include', language : 'cpp')
 
 subdir('C')
 subdir('cython')
