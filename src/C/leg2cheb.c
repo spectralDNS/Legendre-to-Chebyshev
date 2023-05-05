@@ -446,12 +446,19 @@ fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction, size_t v) {
     directions[1] = 1;
     break;
   }
+  double **A = (double **)malloc(2 * sizeof(double *));
+  A[0] = NULL;
+  A[1] = NULL;
+
+  fmmplan.dplan = create_direct(N, direction);
 
   L = ceil(log2((double)N / (double)maxs)) - 2;
   if (L < 1) {
     if (v > 1)
-      printf("Levels < 1. Try smaller maxs. Exiting...\n");
-    exit(-1);
+      printf("Levels < 1. Using only direct method\n");
+    fmmplan.Nn = N;
+    fmmplan.A = A;
+    return &fmmplan;
   }
 
   s = ceil((double)N / (double)pow(2, L + 2));
@@ -471,9 +478,6 @@ fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction, size_t v) {
     printf("Computed N %lu\n", Nn);
   }
   gettimeofday(&t1, 0);
-  double **A = (double **)malloc(2 * sizeof(double *));
-  A[0] = NULL;
-  A[1] = NULL;
   if (direction == BOTH) {
     A[0] = (double *)malloc(get_number_of_submatrices(Nn, s, L) * M * M *
                             sizeof(double));
@@ -484,7 +488,6 @@ fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction, size_t v) {
                                     M * sizeof(double));
   }
 
-  fmmplan.dplan = create_direct(N, direction);
   double *xj = (double *)malloc(M * sizeof(double));
   for (size_t i = 0; i < M; i++)
     xj[i] = cos((i + 0.5) * M_PI / M);
@@ -598,6 +601,13 @@ size_t execute(const double *input_array, double *output_array,
   double *Th = fmmplan->Th;
   double *ThT = fmmplan->ThT;
   double *A = fmmplan->A[direction];
+  size_t flops = 0;
+
+  if ( TT == NULL){
+    flops = direct(input_array, output_array, fmmplan->dplan, direction);
+    return flops;
+  }
+
   double *ia = (double *)malloc(Nn / 2 * sizeof(double));
   double *oa = (double *)calloc(Nn / 2, sizeof(double));
   double **wk = (double **)malloc(L * sizeof(double *));
@@ -618,7 +628,7 @@ size_t execute(const double *input_array, double *output_array,
     wk[level] = (double *)calloc(b * 2 * M, sizeof(double));
     ck[level] = (double *)calloc(b * 2 * M, sizeof(double));
   }
-  size_t flops = 0;
+
   for (size_t odd = 0; odd < 2; odd++) {
     if (odd == 1) {
       for (size_t i = 0; i < Nn / 2; i++) {

@@ -92,16 +92,25 @@ int main(int argc, char *argv[])
             double s1 = tdiff_sec(r0, r1);
             min_time = s1 < min_time ? s1 : min_time;
         }
-        size_t eflops = (4.5*fmmplan->s + 4*fmmplan->M + (6+2.5)*fmmplan->M*fmmplan->M/fmmplan->s )*N;
         gettimeofday(&t1, 0);
         if (verbose > 0)
         {
-          printf("Timing %2.6e s average %2.6e min of %lu times %lu N %lu S %lu F\n", tdiff_sec(t0, t1)/repeat, min_time, repeat, fmmplan->Nn, get_number_of_submatrices(fmmplan->N, fmmplan->s, fmmplan->L), flops);
-          printf("Estimated flops %lu\n", eflops);
+          printf("Timing N %6lu avg / min = %2.4e / %2.4e \n", N, tdiff_sec(t0, t1) / repeat, min_time);
           printf("Norm %2.8e\n", norm(output_array, N));
         }
 
-        if (N < 10001)
+        if (verbose > 0 && fmmplan->s > 0)
+        {
+          size_t eflops = (4.5*fmmplan->s + 4*fmmplan->M + (6+2.5)*fmmplan->M*fmmplan->M/fmmplan->s )*N;
+          printf("Flops / Estimated flops %lu / %lu \n", flops, eflops);
+        }
+
+        if (verbose > 0 && fmmplan->s == 0)
+        {
+          printf("Using direct method\n");
+        }
+
+        if (N < 10001 && fmmplan->s > 0)
         {
             struct timeval r0, r1;
             gettimeofday(&r0, 0);

@@ -25,10 +25,7 @@ cdef class Leg2Cheb:
         self.use_direct = use_direct
         self.direction = direction
         self.verbose = verbose
-        if self.N < use_direct:
-            self.plan = <l2c.direct_plan*>l2c.create_direct(self.N, direction)
-        else:
-            self.plan = <l2c.fmm_plan*>l2c.create_fmm(self.N, maxs, direction, verbose)
+        self.plan = <l2c.fmm_plan*>l2c.create_fmm(self.N, maxs, direction, verbose)
         self._input_array = input_array
         self._output_array = output_array
 
@@ -51,7 +48,7 @@ cdef class Leg2Cheb:
         else:
             l2c.direct(<double*>np.PyArray_DATA(self._input_array),
                         <double*>np.PyArray_DATA(self._output_array),
-                        <l2c.direct_plan*>self.plan, direction)
+                        <l2c.direct_plan*>(<l2c.fmm_plan*>self.plan).dplan, direction)
 
         if output_array is not None:
             output_array[...] = self._output_array[:]
@@ -68,10 +65,7 @@ cdef class Leg2Cheb:
         return self._output_array
 
     def __dealloc__(self):
-        if self.N > self.use_direct:
-            free_fmm(<l2c.fmm_plan>self.plan)
-        else:
-            free_direct(<l2c.direct_plan>self.plan)
+        free_fmm(<l2c.fmm_plan>self.plan)
 
 cpdef np.ndarray leg2cheb(input_array : np.ndarray, output_array : np.ndarray):
     cdef l2c.direct_plan* plan = <l2c.direct_plan*>l2c.create_direct(input_array.shape[0], 0)
