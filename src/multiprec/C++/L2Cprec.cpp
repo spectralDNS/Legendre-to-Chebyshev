@@ -101,4 +101,5 @@ int main(int argc, char* argv[]) {
   }
   free(u);
   free(b);
+  free(c);
 }
