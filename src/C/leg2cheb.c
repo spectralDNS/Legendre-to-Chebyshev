@@ -768,7 +768,7 @@ void test_foreward_backward(size_t N, size_t maxs, double m, size_t verbose) {
   printf("N %6lu L2 Error = %2.4e \n", N, sqrt(error));
   printf("            Flops = %lu\n\n", flops);
 #ifdef TEST
-  assert(error < 1e-10);
+  assert(error < 1e-20);
 #endif
   free(ia);
   free(input_array);
@@ -823,8 +823,7 @@ void test_direct(size_t N, size_t verbose) {
   for (size_t j = 0; j < N; j++) {
     error += pow(input_array[j] - ia[j], 2);
   }
-  if (verbose > 0)
-    printf("L2 Error direct = %2.4e \n", sqrt(error));
+  printf("L2 Error direct = %2.4e \n", sqrt(error));
 #ifdef TEST
   assert(sqrt(error) < 1e-10);
 #endif

@@ -20,7 +20,8 @@ int main(int argc, char *argv[])
                  "  -d      Kind of transform to run\n"
                  "       0 - Test speed of Legendre to Chebyshev transform\n"
                  "       1 - Test speed of Chebyshev to Legendre transform\n"
-                 "       2 - Test accuracy of one transform back and forth\n";
+                 "       2 - Test accuracy of one transform back and forth\n"
+                 "       3 - Test direct transform back and forth\n";
 
 
     while ((opt = getopt(argc, argv, ":N:d:s::m::r::v::h")) != -1)
@@ -58,6 +59,10 @@ int main(int argc, char *argv[])
     {
     case 2:
       test_foreward_backward(N, maxs, m, verbose);
+      break;
+
+    case 3:
+      test_direct(N, verbose);
       break;
 
     default:
