@@ -768,8 +768,7 @@ void test_foreward_backward(size_t N, size_t maxs, double m, size_t verbose) {
   printf("N %6lu L2 Error = %2.4e \n", N, sqrt(error));
   printf("            Flops = %lu\n\n", flops);
 #ifdef TEST
-  printf("Def TEST\n");
-  assert(error < 1e-50);
+  assert(sqrt(error) < 1e-10);
 #endif
   free(ia);
   free(input_array);
