@@ -85,9 +85,9 @@ int main(int argc, char* argv[]) {
   //typedef boost::multiprecision::cpp_dec_float_50 T;
   typedef boost::multiprecision::cpp_dec_float_100 T;
 
-  T *u = (T *)malloc(N * sizeof(T));
-  T *b = (T *)malloc(N * sizeof(T));
-  T *c = (T *)malloc(N * sizeof(T));
+  T *u = (T *)calloc(N, sizeof(T));
+  T *b = (T *)calloc(N, sizeof(T));
+  T *c = (T *)calloc(N, sizeof(T));
   for (size_t i = 0; i < N; i++) {
     u[i] = T(1)/boost::multiprecision::pow(T(i+1), m);
   }
