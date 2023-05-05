@@ -30,7 +30,7 @@ template <class T> void leg2cheb(T *u, T *b, size_t N) {
 
 template <class T> void cheb2leg(T *u, T *b, size_t N) {
   T *a = (T *)malloc(N * sizeof(T));
-  T *dn = (T *)malloc(N * sizeof(T));
+  T *dn = (T *)malloc(N/2 * sizeof(T));
   T *un = (T *)malloc(N * sizeof(T));
   T pi = boost::math::constants::pi<T>();
 
@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
   //typedef boost::multiprecision::cpp_dec_float_50 T;
   typedef boost::multiprecision::cpp_dec_float_100 T;
 
-  T *u = (T *)calloc(N, sizeof(T));
+  T *u = (T *)malloc(N * sizeof(T));
   T *b = (T *)calloc(N, sizeof(T));
   T *c = (T *)calloc(N, sizeof(T));
   for (size_t i = 0; i < N; i++) {

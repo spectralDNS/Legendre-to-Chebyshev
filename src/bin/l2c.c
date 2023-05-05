@@ -8,7 +8,7 @@ int main(int argc, char *argv[])
     int opt;
     size_t N;
     size_t maxs = 36;
-    size_t verbose = 0;
+    size_t verbose = 2;
     double m = 0;
     size_t repeat = 1;
     unsigned direction;
