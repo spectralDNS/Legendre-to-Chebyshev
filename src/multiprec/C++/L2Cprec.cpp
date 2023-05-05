@@ -1,5 +1,6 @@
 #include <getopt.h>
 #include <assert.h>
+#include <iostream>
 #include <boost/multiprecision/cpp_dec_float.hpp>
 
 using boost::multiprecision::number;
