@@ -4,7 +4,7 @@
 
 Routines for Legendre to Chebyshev (and inverse) transforms.
 
-This is first and foremost the implementation of a Fast Multipole Method similar to the one described in
+This is first and foremost the implementation of a Fast Multipole Method similar to (but not exactly like) the one described in
 
   * B. K. Alpert and V. Rokhlin, A fast algorithm for the evaluation of legendre expansions, 389 SIAM Journal on Scientific and Statistical Computing, 12 (1991), pp. 158–179, https://doi.390org/10.1137/0912009.391
 
