@@ -9,9 +9,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <omp.h>
 #include <sys/time.h>
-
+#ifdef OMP
+#include <omp.h>
+#endif
 enum { L2C = 0, C2L = 1, BOTH = 2 };
 
 typedef struct {

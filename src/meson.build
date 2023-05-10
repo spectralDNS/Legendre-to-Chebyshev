@@ -10,7 +10,7 @@ cython = find_program(cy.cmd_array()[0])
 
 cblas = dependency('openblas')
 fftw = dependency('fftw3')
-omp = dependency('openmp')
+omp = dependency('openmp', required=false)
 deps = [cblas, fftw, omp]
 add_global_arguments(['-DTRI'], language : 'c')
 add_global_link_arguments(['-lm'], language : 'c')
