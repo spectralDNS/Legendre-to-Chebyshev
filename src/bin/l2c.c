@@ -55,6 +55,7 @@ int main(int argc, char *argv[])
           exit(-1);
        }
     }
+    omp_set_num_threads(1);
     switch (direction)
     {
     case 2:

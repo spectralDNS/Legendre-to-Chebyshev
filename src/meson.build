@@ -2,7 +2,7 @@ project('leg2cheb', 'c', 'cython', 'cpp',
         version : '1.0',
         default_options : [
           'buildtype=debugoptimized',
-          'warning_level=3'])
+          'warning_level=1'])
 
 cy = meson.get_compiler('cython')
 cpp = meson.get_compiler('cpp')
@@ -10,9 +10,11 @@ cython = find_program(cy.cmd_array()[0])
 
 cblas = dependency('openblas')
 fftw = dependency('fftw3')
-deps = [cblas, fftw]
-add_global_arguments('-DTRI', language : 'c')
-add_global_link_arguments('-lm', language : 'c')
+omp = dependency('openmp')
+deps = [cblas, fftw, omp]
+add_global_arguments(['-DTRI'], language : 'c')
+add_global_link_arguments(['-lm'], language : 'c')
+#add_global_link_arguments('-lc', language : 'c')
 add_global_arguments('-std=c++11', language : 'cpp')
 
 subdir('C')

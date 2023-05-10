@@ -11,7 +11,7 @@ np.import_array()
 
 cdef class Leg2Cheb:
     cdef:
-        void *plan
+        l2c.fmm_plan* plan
         int N
         int use_direct
         int direction
@@ -44,11 +44,11 @@ cdef class Leg2Cheb:
         if self.N > self.use_direct:
             l2c.execute(<double*>np.PyArray_DATA(self._input_array),
                         <double*>np.PyArray_DATA(self._output_array),
-                        <l2c.fmm_plan*>self.plan, direction)
+                        self.plan, direction)
         else:
             l2c.direct(<double*>np.PyArray_DATA(self._input_array),
                         <double*>np.PyArray_DATA(self._output_array),
-                        <l2c.direct_plan*>(<l2c.fmm_plan*>self.plan).dplan, direction)
+                        self.plan.dplan, direction)
 
         if output_array is not None:
             output_array[...] = self._output_array[:]
@@ -64,7 +64,11 @@ cdef class Leg2Cheb:
     def output_array(self):
         return self._output_array
 
-    def __dealloc__(self):
+    @property
+    def verbose(self):
+        return self.verbose
+
+    def __del__(self):
         free_fmm(<l2c.fmm_plan>self.plan)
 
 cpdef np.ndarray leg2cheb(input_array : np.ndarray, output_array : np.ndarray):

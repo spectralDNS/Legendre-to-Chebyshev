@@ -35,9 +35,9 @@ def cheb2legmp(u, b, N):
 
 if __name__ == '__main__':
     N = 10
-    #u = mp.matrix([mp.mpf(i) for i in range(N)])
     u = mp.matrix([mp.mpf('1')]*N)
     b = mp.matrix([mp.mpf('0')]*N)
     c = mp.matrix([mp.mpf('0')]*N)
     leg2chebmp(u, b, N)
     cheb2legmp(b, c, N)
+    assert mp.norm(c-u, p=mp.inf) < 100*mp.eps()

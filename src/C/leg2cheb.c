@@ -35,7 +35,7 @@ double chebval(const double x, const double *c, size_t M) {
   return c0 + c1 * x;
 }
 
-void __Lambda(const double* z, double* w, size_t N){
+void __Lambda(const double *z, double *w, size_t N) {
   for (size_t i = 0; i < N; i++)
     w[i] = _Lambda(z[i]);
 }
@@ -128,19 +128,19 @@ size_t direct(const double *u, double *b, direct_plan *dplan,
   return flops;
 }
 
-size_t directM(double *input_array, double *output_array, fmm_plan *fmmplan) {
+size_t directM(const double *input_array, double *output_array, fmm_plan *fmmplan) {
   size_t s = fmmplan->s;
   size_t N = fmmplan->N;
-  double *a = fmmplan->dplan->a;
-
+  const double *a = fmmplan->dplan->a;
   size_t flops = 0;
   for (size_t n = 0; n < s; n++) {
     const double *ap = &a[n];
     const double *cp = &input_array[2 * n];
     const double a0 = ap[0];
     double *op = &output_array[0];
-    for (size_t i = 0; i < N - 2 * n; i++)
+    for (size_t i = 0; i < N - 2 * n; i++) {
       (*op++) += a0 * (*ap++) * (*cp++);
+    }
     flops += (N - 2 * n) * 3;
   }
 
@@ -163,7 +163,7 @@ size_t directM(double *input_array, double *output_array, fmm_plan *fmmplan) {
       flops += 3 * (Nm - n);
     }
   }
-  double *op = &output_array[0];
+  double* op = &output_array[0];
   for (size_t i = 0; i < N; i++)
     (*op++) *= M_2_PI;
   output_array[0] *= 0.5;
@@ -361,33 +361,27 @@ void free_fmm(fmm_plan *plan) {
     free(plan->A[1]);
     plan->A[1] = NULL;
   }
-  if (plan->A != NULL)
-  {
+  if (plan->A != NULL) {
     free(plan->A);
     plan->A = NULL;
   }
-  if (plan->T != NULL)
-  {
+  if (plan->T != NULL) {
     free(plan->T);
     plan->T = NULL;
   }
-  if (plan->TT != NULL)
-  {
+  if (plan->TT != NULL) {
     free(plan->TT);
     plan->TT = NULL;
   }
-  if (plan->Th != NULL)
-  {
+  if (plan->Th != NULL) {
     free(plan->Th);
     plan->Th = NULL;
   }
-  if (plan->ThT != NULL)
-  {
+  if (plan->ThT != NULL) {
     free(plan->ThT);
     plan->ThT = NULL;
   }
-  if (plan->dplan != NULL)
-  {
+  if (plan->dplan != NULL) {
     free_direct(plan->dplan);
     plan->dplan = NULL;
   }
@@ -468,8 +462,7 @@ fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction, size_t v) {
   fmmplan.N = N;
   fmmplan.Nn = Nn;
   fmmplan.s = s;
-  if (v > 1)
-  {
+  if (v > 1) {
     printf("N %lu\n", N);
     printf("Num levels %lu\n", L);
     printf("Num submatrices %lu\n", get_number_of_submatrices(Nn, s, L));
@@ -603,7 +596,7 @@ size_t execute(const double *input_array, double *output_array,
   double *A = fmmplan->A[direction];
   size_t flops = 0;
 
-  if ( TT == NULL){
+  if (TT == NULL) {
     flops = direct(input_array, output_array, fmmplan->dplan, direction);
     return flops;
   }
@@ -612,12 +605,10 @@ size_t execute(const double *input_array, double *output_array,
   double *oa = (double *)calloc(Nn / 2, sizeof(double));
   double **wk = (double **)malloc(L * sizeof(double *));
   double **ck = (double **)malloc(L * sizeof(double *));
-  double *input = (double *)malloc(Nn * sizeof(double));
-  memcpy(input, input_array, N * sizeof(double));
-  for (size_t i = N; i < Nn; i++)
-    input[i] = 0.0;
-
-  if (direction == C2L) {
+  double *input;
+  if (direction == C2L) { // Need to modify input array, so make copy
+    input = (double *)malloc(N * sizeof(double));
+    memcpy(input, input_array, N * sizeof(double));
     double *w0 = &input[2];
     for (size_t i = 2; i < N; i++)
       (*w0++) = input_array[i] * i;
@@ -644,13 +635,28 @@ size_t execute(const double *input_array, double *output_array,
         }
       }
     }
-    const double *ap = &input[odd];
+    const double *ap;
+    switch (direction)
+    {
+    case L2C:
+      ap = &input_array[odd];
+      break;
+
+    case C2L:
+      ap = &input[odd];
+      break;
+    }
+
     unsigned int rest = N % 2;
     double *iap = &ia[0];
-    for (size_t i = 0; i < Nn / 2; i++) {
+    for (size_t i = 0; i < N / 2 + rest * (1 - odd); i++) {
       *iap++ = *ap;
       ap += 2;
     }
+    for (size_t i = N / 2 + rest * (1 - odd); i < Nn / 2; i++) {
+      *iap++ = 0;
+    }
+
     size_t Nc = 0;
     size_t ik = 0;
     for (size_t level = L; level-- > 0;) {
@@ -666,8 +672,7 @@ size_t execute(const double *input_array, double *output_array,
         double *c0 = &ck[level][Nd];
         double *wq = &wk[level][Nd];
 #ifdef TRI
-        if (level > 0 && block > 0) // optimization for constant block size 2
-        {
+        if (level > 0 && block > 0) {
           int b0 = (block - 1) / 2;
           int q0 = (block - 1) % 2;
           matvectriZ(&Th[0], &wk[level][Nd], &wk[level - 1][(b0 * 2 + q0) * M],
@@ -698,6 +703,7 @@ size_t execute(const double *input_array, double *output_array,
     for (size_t level = 0; level < L - 1; level++) {
       double *c0 = ck[level];
       double *c1 = ck[level + 1];
+      size_t j1 = 0;
       for (size_t block = 0; block < get_number_of_blocks(level + 1) - 1;
            block++) {
 #ifdef TRI
@@ -729,7 +735,7 @@ size_t execute(const double *input_array, double *output_array,
 
   switch (direction) {
   case L2C:
-    flops += directM(input, output_array, fmmplan);
+    flops += directM(input_array, output_array, fmmplan);
     break;
 
   case C2L:
@@ -745,30 +751,32 @@ size_t execute(const double *input_array, double *output_array,
   }
   free(wk);
   free(ck);
-  free(input);
+  if (direction == C2L) {
+    free(input);
+  }
   return flops;
 }
 
 void test_foreward_backward(size_t N, size_t maxs, double m, size_t verbose) {
   fmm_plan *fmmplan = create_fmm(N, maxs, 2, verbose);
-  double *input_array = (double *)calloc(fmmplan->Nn, sizeof(double));
-  double *output_array = (double *)calloc(fmmplan->Nn, sizeof(double));
+  double *input_array = (double *)calloc(N, sizeof(double));
+  double *output_array = (double *)calloc(N, sizeof(double));
   // Initialize some input array
   for (size_t i = 0; i < N; i++)
-    input_array[i] = 1.0/pow(i+1, m);
+    input_array[i] = 1.0 / pow(i + 1, m);
   // Leg to Cheb
   size_t flops = execute(input_array, output_array, fmmplan, 0);
-  double *ia = (double *)calloc(fmmplan->Nn, sizeof(double));
+  double *ia = (double *)calloc(N, sizeof(double));
   // Cheb to Leg
   flops += execute(output_array, ia, fmmplan, 1);
   // Compute L2 error norm
   double error = 0.0;
   for (size_t j = 0; j < N; j++)
-    error += pow(input_array[j] - ia[j], 2);
-  printf("N %6lu L2 Error = %2.4e \n", N, sqrt(error));
-  printf("            Flops = %lu\n\n", flops);
+    error = fmax(fabs(input_array[j] - ia[j]), error);
+  printf("N %6lu L inf Error = %2.4e \n", N, error);
+  printf("               Flops = %lu\n\n", flops);
 #ifdef TEST
-  assert(sqrt(error) < 1e-10);
+  assert(error < 1e-10);
 #endif
   free(ia);
   free(input_array);
@@ -776,10 +784,11 @@ void test_foreward_backward(size_t N, size_t maxs, double m, size_t verbose) {
   free_fmm(fmmplan);
 }
 
-void test_speed(size_t N, size_t maxs, size_t repeat, unsigned direction, size_t verbose) {
+void test_speed(size_t N, size_t maxs, size_t repeat, unsigned direction,
+                size_t verbose) {
   fmm_plan *fmmplan = create_fmm(N, maxs, direction, verbose);
-  double *input_array = (double *)calloc(fmmplan->Nn, sizeof(double));
-  double *output_array = (double *)calloc(fmmplan->Nn, sizeof(double));
+  double *input_array = (double *)calloc(N, sizeof(double));
+  double *output_array = (double *)calloc(N, sizeof(double));
   // Initialize some input array
   for (size_t i = 0; i < N; i++)
     input_array[i] = 1.0;
@@ -787,19 +796,20 @@ void test_speed(size_t N, size_t maxs, size_t repeat, unsigned direction, size_t
   struct timeval t0, t1;
   gettimeofday(&t0, 0);
   double min_time = 1e8;
+  size_t flops;
   for (size_t i = 0; i < repeat; i++) {
     struct timeval r0, r1;
     gettimeofday(&r0, 0);
     for (size_t j = 0; j < N; j++)
       output_array[j] = 0.0;
-    execute(input_array, output_array, fmmplan, direction);
+    flops = execute(input_array, output_array, fmmplan, direction);
     gettimeofday(&r1, 0);
     double s1 = tdiff_sec(r0, r1);
     min_time = s1 < min_time ? s1 : min_time;
   }
   gettimeofday(&t1, 0);
-  printf("Timing N %6lu avg / min = %2.4e / %2.4e \n", N, tdiff_sec(t0, t1) / repeat,
-           min_time);
+  printf("Timing N %6lu avg / min = %2.4e / %2.4e flops = %lu\n", N,
+         tdiff_sec(t0, t1) / repeat, min_time, flops);
   free(input_array);
   free(output_array);
   free_fmm(fmmplan);
@@ -830,4 +840,29 @@ void test_direct(size_t N, size_t verbose) {
   free(input_array);
   free(output_array);
   free_direct(dplan);
+}
+
+void test_2_sizes(size_t N, size_t maxs, size_t verbose) {
+  fmm_plan *fmmplan = create_fmm(N, maxs, 2, verbose);
+  double *input_array = (double *)calloc(N, sizeof(double));
+  double *output_array = (double *)calloc(N, sizeof(double));
+  // Initialize some input array
+  for (size_t i = 0; i < N; i++)
+    input_array[i] = 1.0;
+  // Leg to Cheb
+  size_t flops = execute(input_array, output_array, fmmplan, 0);
+  free(input_array);
+  free(output_array);
+  free_fmm(fmmplan);
+  fmmplan = create_fmm(2 * N, maxs, 2, verbose);
+  input_array = (double *)calloc(2 * N, sizeof(double));
+  output_array = (double *)calloc(2 * N, sizeof(double));
+  // Initialize some input array
+  for (size_t i = 0; i < 2 * N; i++)
+    input_array[i] = 1.0;
+  // Leg to Cheb
+  flops = execute(input_array, output_array, fmmplan, 0);
+  free(input_array);
+  free(output_array);
+  free_fmm(fmmplan);
 }

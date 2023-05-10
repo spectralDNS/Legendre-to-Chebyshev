@@ -11,4 +11,5 @@ int main(int argc, char *argv[]) {
   test_direct(10, 0);
   test_direct(200, 0);
   test_direct(1000, 0);
+  test_2_sizes(1000, 36, 1);
 }

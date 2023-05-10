@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <omp.h>
 #include <sys/time.h>
 
 enum { L2C = 0, C2L = 1, BOTH = 2 };
@@ -38,8 +39,8 @@ typedef struct {
 
 void free_fmm(fmm_plan *plan);
 void free_direct(direct_plan *dplan);
-fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction, size_t v);
-direct_plan *create_direct(size_t N, unsigned direction);
+fmm_plan* create_fmm(size_t N, size_t maxs, unsigned direction, size_t v);
+direct_plan* create_direct(size_t N, unsigned direction);
 size_t direct(const double *input_array, double *output_array,
               direct_plan *dplan, unsigned direction);
 size_t execute(const double *input_array, double *output_array,
@@ -58,5 +59,6 @@ void get_ij(size_t *ij, const size_t level, const size_t block, const size_t s,
 void test_foreward_backward(size_t N, size_t maxs, double m, size_t verbose);
 void test_speed(size_t N, size_t maxs, size_t repeat, unsigned direction, size_t verbose);
 void test_direct(size_t N, size_t verbose);
+void test_2_sizes(size_t N, size_t maxs, size_t verbose);
 
 #endif

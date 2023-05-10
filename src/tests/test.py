@@ -11,6 +11,16 @@ def test_accuracy(N):
     b = C(u, b, 0)
     c = C(b, c, 1)
     assert np.linalg.norm(c-1) < 1e-8
+    del C
+    N = 2*N
+    u = np.ones(N)
+    b = np.zeros_like(u)
+    c = np.zeros_like(u)
+    C = l2c.Leg2Cheb(u, b)
+    b = C(u, b, 0)
+    c = C(b, c, 1)
+    assert np.linalg.norm(c-1) < 1e-8
+
 
 if __name__ == '__main__':
     test_accuracy(1000)
