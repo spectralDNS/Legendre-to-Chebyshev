@@ -9,20 +9,24 @@ cimport numpy as np
 
 np.import_array()
 
+cpdef enum:
+    L2C
+    C2L
+    BOTH
+
 cdef class Leg2Cheb:
     cdef:
         l2c.fmm_plan* plan
-        int N
-        int use_direct
-        int direction
-        int verbose
+        size_t N
+        size_t use_direct
+        size_t direction
+        size_t verbose
         np.ndarray _input_array
         np.ndarray _output_array
 
     def __cinit__(self, input_array : np.ndarray, output_array : np.ndarray,
-                  maxs : int=36, direction : int=2, use_direct : int=500, verbose : int=1):
+                  maxs : size_t=36, direction : size_t=BOTH, verbose : size_t=1):
         self.N = input_array.shape[0]
-        self.use_direct = use_direct
         self.direction = direction
         self.verbose = verbose
         self.plan = <l2c.fmm_plan*>l2c.create_fmm(self.N, maxs, direction, verbose)
@@ -36,19 +40,14 @@ cdef class Leg2Cheb:
         if direction is None:
             direction = self.direction
 
-        if direction == 2:
+        if direction == BOTH:
             raise RuntimeError("Pleas specify direction of transform.")
 
         self._output_array[...] = 0
 
-        if self.N > self.use_direct:
-            l2c.execute(<double*>np.PyArray_DATA(self._input_array),
-                        <double*>np.PyArray_DATA(self._output_array),
-                        self.plan, direction)
-        else:
-            l2c.direct(<double*>np.PyArray_DATA(self._input_array),
-                        <double*>np.PyArray_DATA(self._output_array),
-                        self.plan.dplan, direction)
+        l2c.execute(<double*>np.PyArray_DATA(self._input_array),
+                    <double*>np.PyArray_DATA(self._output_array),
+                    self.plan, direction)
 
         if output_array is not None:
             output_array[...] = self._output_array[:]
@@ -72,18 +71,18 @@ cdef class Leg2Cheb:
         free_fmm(<l2c.fmm_plan>self.plan)
 
 cpdef np.ndarray leg2cheb(input_array : np.ndarray, output_array : np.ndarray):
-    cdef l2c.direct_plan* plan = <l2c.direct_plan*>l2c.create_direct(input_array.shape[0], 0)
+    cdef l2c.direct_plan* plan = <l2c.direct_plan*>l2c.create_direct(input_array.shape[0], L2C)
     l2c.direct(<double*>np.PyArray_DATA(input_array),
                <double*>np.PyArray_DATA(output_array),
-               plan, 0)
+               plan, L2C)
     free_direct(<l2c.direct_plan>plan)
     return output_array
 
 cpdef np.ndarray cheb2leg(input_array : np.ndarray, output_array : np.ndarray):
-    cdef l2c.direct_plan* plan = <l2c.direct_plan*>l2c.create_direct(input_array.shape[0], 1)
+    cdef l2c.direct_plan* plan = <l2c.direct_plan*>l2c.create_direct(input_array.shape[0], C2L)
     l2c.direct(<double*>np.PyArray_DATA(input_array),
                <double*>np.PyArray_DATA(output_array),
-               plan, 1)
+               plan, C2L)
     free_direct(<l2c.direct_plan>plan)
     return output_array
 
@@ -100,7 +99,7 @@ def Lambda(np.ndarray x):
         array can have any dimension
     """
     cdef:
-        int N = np.PyArray_Ravel(x, np.NPY_CORDER).shape[0]
+        size_t N = np.PyArray_Ravel(x, np.NPY_CORDER).shape[0]
         np.ndarray[double, ndim=1] a = np.empty(N)
     l2c.__Lambda(<double*>np.PyArray_DATA(x), <double*>np.PyArray_DATA(a), N)
     return np.PyArray_Reshape(a, np.shape(x))

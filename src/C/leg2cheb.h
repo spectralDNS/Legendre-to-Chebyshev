@@ -16,7 +16,7 @@
 enum { L2C = 0, C2L = 1, BOTH = 2 };
 
 typedef struct {
-  unsigned direction;
+  size_t direction;
   size_t N;
   double *a;
   double *dn;
@@ -24,7 +24,7 @@ typedef struct {
 } direct_plan;
 
 typedef struct {
-  unsigned direction;
+  size_t direction;
   size_t M;
   size_t N;
   size_t Nn;
@@ -40,12 +40,12 @@ typedef struct {
 
 void free_fmm(fmm_plan *plan);
 void free_direct(direct_plan *dplan);
-fmm_plan* create_fmm(size_t N, size_t maxs, unsigned direction, size_t v);
-direct_plan* create_direct(size_t N, unsigned direction);
+fmm_plan *create_fmm(size_t N, size_t maxs, size_t direction, size_t v);
+direct_plan *create_direct(size_t N, size_t direction);
 size_t direct(const double *input_array, double *output_array,
-              direct_plan *dplan, unsigned direction);
+              direct_plan *dplan, size_t direction);
 size_t execute(const double *input_array, double *output_array,
-               fmm_plan *fmmplan, unsigned direction);
+               fmm_plan *fmmplan, size_t direction);
 double tdiff_sec(struct timeval t0, struct timeval t1);
 double _Lambda(const double z);
 void __Lambda(const double *z, double *w, size_t N);
@@ -57,7 +57,8 @@ void get_ij(size_t *ij, const size_t level, const size_t block, const size_t s,
             const size_t L);
 // Tests
 void test_foreward_backward(size_t N, size_t maxs, double m, size_t verbose);
-void test_speed(size_t N, size_t maxs, size_t repeat, unsigned direction, size_t verbose);
+void test_speed(size_t N, size_t maxs, size_t repeat, size_t direction,
+                size_t verbose);
 void test_direct(size_t N, size_t verbose);
 void test_2_sizes(size_t N, size_t maxs, size_t verbose);
 

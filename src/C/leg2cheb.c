@@ -70,7 +70,7 @@ void get_ij(size_t *ij, const size_t level, const size_t block, const size_t s,
 }
 
 size_t direct(const double *u, double *b, direct_plan *dplan,
-              unsigned direction) {
+              size_t direction) {
   size_t flops = 0;
   const size_t N = dplan->N;
   for (size_t i = 0; i < N; i++)
@@ -374,7 +374,7 @@ void free_fmm(fmm_plan *plan) {
   }
 }
 
-direct_plan *create_direct(size_t N, unsigned direction) {
+direct_plan *create_direct(size_t N, size_t direction) {
   static direct_plan dplan = {0};
   if (direction == L2C | direction == BOTH) {
     double *a = (double *)malloc(N * sizeof(double));
@@ -399,7 +399,7 @@ direct_plan *create_direct(size_t N, unsigned direction) {
   return &dplan;
 }
 
-fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction, size_t v) {
+fmm_plan *create_fmm(size_t N, size_t maxs, size_t direction, size_t v) {
   size_t M = 18;
   fftw_plan plan, plan1d;
   static fmm_plan fmmplan = {0};
@@ -408,8 +408,8 @@ fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction, size_t v) {
   size_t s;
   size_t ij[2];
   struct timeval t1, t2;
-  unsigned directions[2];
-  unsigned num_directions = 2;
+  size_t directions[2];
+  size_t num_directions = 2;
   switch (direction) {
   case L2C:
     directions[0] = 0;
@@ -561,7 +561,7 @@ fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction, size_t v) {
 }
 
 size_t execute(const double *input_array, double *output_array,
-               fmm_plan *fmmplan, unsigned direction) {
+               fmm_plan *fmmplan, size_t direction) {
   size_t Nn = fmmplan->Nn;
   size_t N = fmmplan->N;
   size_t L = fmmplan->L;
@@ -625,7 +625,7 @@ size_t execute(const double *input_array, double *output_array,
       break;
     }
 
-    unsigned int rest = N % 2;
+    size_t rest = N % 2;
     double *iap = &ia[0];
     for (size_t i = 0; i < N / 2 + rest * (1 - odd); i++) {
       *iap++ = *ap;
@@ -761,7 +761,7 @@ void test_foreward_backward(size_t N, size_t maxs, double m, size_t verbose) {
   free_fmm(fmmplan);
 }
 
-void test_speed(size_t N, size_t maxs, size_t repeat, unsigned direction,
+void test_speed(size_t N, size_t maxs, size_t repeat, size_t direction,
                 size_t verbose) {
   fmm_plan *fmmplan = create_fmm(N, maxs, direction, verbose);
   double *input_array = (double *)calloc(N, sizeof(double));

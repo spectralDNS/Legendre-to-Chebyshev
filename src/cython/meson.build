@@ -9,7 +9,8 @@ py.extension_module(
     'l2c',
     'l2c.pyx',
     install : true,
+    c_args : ['-march=native'],
     include_directories: incdir_numpy,
-    dependencies : [dep_py,fftw,cblas],
+    dependencies : [dep_py, deps],
     link_with : l2clib
 )

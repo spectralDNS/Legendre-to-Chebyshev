@@ -19,6 +19,7 @@ add_global_arguments('-std=c++11', language : 'cpp')
 
 subdir('C')
 subdir('cython')
+subdir('ctypes')
 subdir('tests')
 subdir('bin')
 subdir('multiprec/python')
