@@ -8,23 +8,8 @@ size_t max(size_t a, size_t b) { return (a > b) ? a : b; }
 
 double fmax(double a, double b) { return (a > b) ? a : b; }
 
-double norm(const double *a, const size_t N) {
-  double x = 0;
-  for (size_t i = 0; i < N; i++)
-    x += a[i] * a[i];
-  return sqrt(x);
-}
-
-double norm_inf(const double *a, const size_t N) {
-  double x = 0;
-  for (size_t i = 0; i < N; i++) {
-    x = fmax(x, fabs(a[i]));
-  }
-  return x;
-}
-
 double chebval(const double x, const double *c, size_t M) {
-  double x2 = 2 * x;
+  const double x2 = 2 * x;
   double c0 = c[M - 2];
   double c1 = c[M - 1];
   for (size_t i = 3; i < M + 1; i++) {
@@ -79,8 +64,9 @@ size_t get_number_of_submatrices(const size_t N, const size_t s,
 
 void get_ij(size_t *ij, const size_t level, const size_t block, const size_t s,
             const size_t L) {
-  ij[0] = 2 * block * s * get_h(level, L);
-  ij[1] = ij[0] + 2 * s * get_h(level, L);
+  size_t h = get_h(level, L);
+  ij[0] = 2 * block * s * h;
+  ij[1] = ij[0] + 2 * s * h;
 }
 
 size_t direct(const double *u, double *b, direct_plan *dplan,
@@ -128,7 +114,8 @@ size_t direct(const double *u, double *b, direct_plan *dplan,
   return flops;
 }
 
-size_t directM(const double *input_array, double *output_array, fmm_plan *fmmplan) {
+size_t directM(const double *input_array, double *output_array,
+               fmm_plan *fmmplan) {
   size_t s = fmmplan->s;
   size_t N = fmmplan->N;
   const double *a = fmmplan->dplan->a;
@@ -163,7 +150,7 @@ size_t directM(const double *input_array, double *output_array, fmm_plan *fmmpla
       flops += 3 * (Nm - n);
     }
   }
-  double* op = &output_array[0];
+  double *op = &output_array[0];
   for (size_t i = 0; i < N; i++)
     (*op++) *= M_2_PI;
   output_array[0] *= 0.5;
@@ -237,9 +224,9 @@ void matvectri(const double *A, const double *x, double *b, const size_t m,
 }
 
 void matvectriZ(const double *A, const double *x, double *b, const size_t m,
-                const size_t n, const size_t lda, const size_t upper) {
+                const size_t n, const size_t lda, const bool upper) {
 
-  if (upper == 0) {
+  if (upper == false) {
     double *zp = (double *)malloc(m * sizeof(double));
     double *zm = (double *)malloc(m * sizeof(double));
     const double *xp = &x[lda];
@@ -253,7 +240,7 @@ void matvectriZ(const double *A, const double *x, double *b, const size_t m,
     }
     for (size_t i = 0; i < m; i++) {
       double s = 0.0;
-      const double *z = i % 2 == 0 ? &zp[0] : &zm[0];
+      const double *z = i % 2 ? &zm[0] : &zp[0];
       const double *ap = &A[i * lda];
       for (size_t j = 0; j < i + 1; j++)
         s += (*ap++) * (*z++);
@@ -388,7 +375,7 @@ void free_fmm(fmm_plan *plan) {
 }
 
 direct_plan *create_direct(size_t N, unsigned direction) {
-  static direct_plan dplan = {0, 0, NULL, NULL, NULL};
+  static direct_plan dplan = {0};
   if (direction == L2C | direction == BOTH) {
     double *a = (double *)malloc(N * sizeof(double));
     for (size_t i = 0; i < N; i++)
@@ -399,7 +386,7 @@ direct_plan *create_direct(size_t N, unsigned direction) {
     double *dn = (double *)malloc(N / 2 * sizeof(double));
     double *an = (double *)malloc(N * sizeof(double));
     dn[0] = 0;
-    an[0] = 2 / sqrt(M_PI);
+    an[0] = M_2_SQRTPI;
     for (size_t i = 1; i < N; i++)
       an[i] = 1 / (2 * _Lambda(i) * i * (i + 0.5));
     for (size_t i = 1; i < N / 2; i++)
@@ -415,34 +402,29 @@ direct_plan *create_direct(size_t N, unsigned direction) {
 fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction, size_t v) {
   size_t M = 18;
   fftw_plan plan, plan1d;
-  static fmm_plan fmmplan = {0,    0,    0,    0,    0,    0,
-                             NULL, NULL, NULL, NULL, NULL, NULL};
+  static fmm_plan fmmplan = {0};
   size_t Nn;
   size_t L = 1;
   size_t s;
   size_t ij[2];
   struct timeval t1, t2;
-  unsigned *directions = (unsigned *)malloc(2 * sizeof(unsigned));
+  unsigned directions[2];
   unsigned num_directions = 2;
   switch (direction) {
   case L2C:
     directions[0] = 0;
     num_directions = 1;
-    directions = realloc(directions, sizeof(unsigned));
     break;
   case C2L:
     directions[0] = 1;
     num_directions = 1;
-    directions = realloc(directions, sizeof(unsigned));
     break;
   default:
     directions[0] = 0;
     directions[1] = 1;
     break;
   }
-  double **A = (double **)malloc(2 * sizeof(double *));
-  A[0] = NULL;
-  A[1] = NULL;
+  double **A = (double **)calloc(2, sizeof(double *));
 
   fmmplan.dplan = create_direct(N, direction);
 
@@ -490,9 +472,6 @@ fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction, size_t v) {
   plan1d = fftw_plan_r2r_1d(M, fun, fun_hat, FFTW_REDFT10, FFTW_ESTIMATE);
   plan = fftw_plan_r2r_2d(M, M, fun, fun_hat, FFTW_REDFT10, FFTW_REDFT10,
                           FFTW_ESTIMATE);
-  double *xj0 = (double *)malloc(M * sizeof(double));
-  for (size_t i = 0; i < M; i++)
-    xj0[i] = cos((i + 0.5) * M_PI / M);
 
   for (size_t di = 0; di < num_directions; di++) {
     size_t dir = directions[di];
@@ -505,9 +484,9 @@ fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction, size_t v) {
         for (size_t q = 0; q < 2; q++) {
           for (size_t p = 0; p < q + 1; p++) {
             for (size_t i = 0; i < M; i++) {
-              double x = (2 * (ij[0] + p * h) + (xj0[i] + 1) * h);
+              double x = (2 * (ij[0] + p * h) + (xj[i] + 1) * h);
               for (size_t j = 0; j < M; j++) {
-                double y = (2 * (ij[1] + (q + 0) * h) + (xj0[j] + 1) * h);
+                double y = (2 * (ij[1] + (q + 0) * h) + (xj[j] + 1) * h);
                 fun[i * M + j] = dir == 0 ? mxy(&x, &y) : lxy(&x, &y);
               }
             }
@@ -551,7 +530,7 @@ fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction, size_t v) {
   for (size_t q = 0; q < 2; q++) {
     for (size_t k = 0; k < M; k++) {
       for (size_t j = 0; j < M; j++) {
-        fun[j] = cos(k * acos((xj0[j] + 2 * q - 1) / 2));
+        fun[j] = cos(k * acos((xj[j] + 2 * q - 1) / 2));
         fun_hat[j] = 0.0;
       }
       fftw_execute(plan1d);
@@ -573,7 +552,6 @@ fmm_plan *create_fmm(size_t N, size_t maxs, unsigned direction, size_t v) {
   fftw_destroy_plan(plan);
   fftw_destroy_plan(plan1d);
   free(xj);
-  free(xj0);
   fmmplan.Th = Th;
   fmmplan.ThT = ThT;
   gettimeofday(&t2, 0);
@@ -595,6 +573,7 @@ size_t execute(const double *input_array, double *output_array,
   double *ThT = fmmplan->ThT;
   double *A = fmmplan->A[direction];
   size_t flops = 0;
+  assert(direction == C2L | direction == L2C);
 
   if (TT == NULL) {
     flops = direct(input_array, output_array, fmmplan->dplan, direction);
@@ -636,8 +615,7 @@ size_t execute(const double *input_array, double *output_array,
       }
     }
     const double *ap;
-    switch (direction)
-    {
+    switch (direction) {
     case L2C:
       ap = &input_array[odd];
       break;
@@ -657,8 +635,8 @@ size_t execute(const double *input_array, double *output_array,
       *iap++ = 0;
     }
 
-    size_t Nc = 0;
     size_t ik = 0;
+    size_t MM = M * M;
     for (size_t level = L; level-- > 0;) {
       if (level == L - 1) {
         size_t K = get_number_of_blocks(L - 1) * 2;
@@ -676,8 +654,8 @@ size_t execute(const double *input_array, double *output_array,
           int b0 = (block - 1) / 2;
           int q0 = (block - 1) % 2;
           matvectriZ(&Th[0], &wk[level][Nd], &wk[level - 1][(b0 * 2 + q0) * M],
-                     M, M, M, 0);
-          flops += M * M; //+2*M;
+                     M, M, M, false);
+          flops += MM; //+2*M;
         }
 #endif
         for (size_t q = 0; q < 2; q++) {
@@ -685,16 +663,15 @@ size_t execute(const double *input_array, double *output_array,
           if (level > 0 && block > 0) {
             int b0 = (block - 1) / 2;
             int q0 = (block - 1) % 2;
-            matvectri(&Th[q * M * M], &wq[q * M],
+            matvectri(&Th[q * MM], &wq[q * M],
                       &wk[level - 1][(b0 * 2 + q0) * M], M, M, M, false);
-            flops += M * M;
+            flops += MM;
           }
 #endif
           for (size_t p = 0; p < q + 1; p++) {
-            cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1.0, &A[Nc], M,
+            cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1.0, &A[ik * MM], M,
                         &wq[q * M], 1, 1.0, &c0[p * M], 1);
-            flops += 2 * M * M;
-            Nc += M * M;
+            flops += 2 * MM;
             ik++;
           }
         }
@@ -707,14 +684,14 @@ size_t execute(const double *input_array, double *output_array,
       for (size_t block = 0; block < get_number_of_blocks(level + 1) - 1;
            block++) {
 #ifdef TRI
-        matvectriZ(&ThT[0], &c0[block * M], &c1[block * 2 * M], M, M, M, 1);
-        flops += 1.5 * M * M;
+        matvectriZ(&ThT[0], &c0[block * M], &c1[block * 2 * M], M, M, M, true);
+        flops += 1.5 * MM;
 #else
         for (size_t p = 0; p < 2; p++) {
           matvectri(&ThT[p * M * M], &c0[block * M], &c1[j1 * M], M, M, M,
                     true);
           j1++;
-          flops += M * M;
+          flops += MM;
         }
 #endif
       }
