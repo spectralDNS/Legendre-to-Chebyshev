@@ -41,6 +41,27 @@ Lambda = C._Lambda
 Lambda.restype = c_double
 
 class Leg2Cheb:
+    """Class for Legendre/Chebyshev transforms
+
+    A fast multipole algorithm similar to::
+
+        B. K. Alpert and V. Rokhlin, A fast algorithm for the evaluation of
+        Legendre expansions, 389 SIAM Journal on Scientific and Statistical
+        Computing, 12 (1991), pp. 158–179, https://doi.390org/10.1137/0912009.391
+
+    Parameters
+    ----------
+    input_array : Numpy array of floats
+    output_array : Numpy array of floats
+    maxs : int
+        Max size of smallest hierarchical matrix
+    direction : int
+        0 - Legendre to Chebyshev
+        1 - Chebyshev to Legendre
+        2 - Assemble for both directions
+    verbose : int
+        Verbosity level
+    """
     def __init__(self, input_array, output_array, maxs : int=36,
                  direction : int=2, verbose : int=1):
         self.N = input_array.shape[0]
@@ -51,6 +72,24 @@ class Leg2Cheb:
         self._output_ctypes = output_array.ctypes
 
     def __call__(self, input_array=None, output_array=None, direction=0):
+        """
+        Signature::
+
+            __call__(input_array=None, output_array=None, direction=0, **kw)
+
+        Compute transform and return output array
+
+        Parameters
+        ----------
+        input_array : array, optional
+            If not provided, then use internally stored array
+        output_array : array, optional
+            If not provided, then use internally stored array
+        direction : int
+            0 - Legendre to Chebyshev
+            1 - Chebyshev to Legendre
+
+        """
         assert direction in (0, 1)
         if input_array is not None:
             self._input_array[...] = input_array

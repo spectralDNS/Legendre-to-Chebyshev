@@ -6,4 +6,5 @@ test('test ctypes',
      args: [
        'l2ctypes.py',
      ],
+     depends : l2clib,
      workdir: meson.current_source_dir())

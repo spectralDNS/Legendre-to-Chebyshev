@@ -15,6 +15,27 @@ cpdef enum:
     BOTH
 
 cdef class Leg2Cheb:
+    """Class for Legendre/Chebyshev transforms
+
+    A fast multipole algorithm similar to::
+
+        B. K. Alpert and V. Rokhlin, A fast algorithm for the evaluation of
+        Legendre expansions, 389 SIAM Journal on Scientific and Statistical
+        Computing, 12 (1991), pp. 158–179, https://doi.390org/10.1137/0912009.391
+
+    Parameters
+    ----------
+    input_array : Numpy array of floats
+    output_array : Numpy array of floats
+    maxs : int
+        Max size of smallest hierarchical matrix
+    direction : int
+        0 - Legendre to Chebyshev
+        1 - Chebyshev to Legendre
+        2 - Assemble for both directions
+    verbose : int
+        Verbosity level
+    """
     cdef:
         l2c.fmm_plan* plan
         size_t N
@@ -33,18 +54,31 @@ cdef class Leg2Cheb:
         self._input_array = input_array
         self._output_array = output_array
 
-    def __call__(self, input_array=None, output_array=None, direction=None):
+    def __call__(self, input_array=None, output_array=None, direction=2):
+        """
+        Signature::
+
+            __call__(input_array=None, output_array=None, direction=0, **kw)
+
+        Compute transform and return output array
+
+        Parameters
+        ----------
+        input_array : array, optional
+            If not provided, then use internally stored array
+        output_array : array, optional
+            If not provided, then use internally stored array
+        direction : int
+            0 - Legendre to Chebyshev
+            1 - Chebyshev to Legendre
+
+        """
+        assert direction in (0, 1), "Pleas specify direction of transform!"
+
         if input_array is not None:
             self._input_array[:] = input_array
 
-        if direction is None:
-            direction = self.direction
-
-        if direction == BOTH:
-            raise RuntimeError("Pleas specify direction of transform.")
-
         self._output_array[...] = 0
-
         l2c.execute(<double*>np.PyArray_DATA(self._input_array),
                     <double*>np.PyArray_DATA(self._output_array),
                     self.plan, direction)
@@ -71,6 +105,18 @@ cdef class Leg2Cheb:
         free_fmm(<l2c.fmm_plan>self.plan)
 
 cpdef np.ndarray leg2cheb(input_array : np.ndarray, output_array : np.ndarray):
+    """
+    Compute Legendre to Chebyshev transform and return output array
+
+    This function uses a direct method and should not be used for
+    arrays much larger than 10,000.
+
+    Parameters
+    ----------
+    input_array : array
+    output_array : array
+
+    """
     cdef l2c.direct_plan* plan = <l2c.direct_plan*>l2c.create_direct(input_array.shape[0], L2C)
     l2c.direct(<double*>np.PyArray_DATA(input_array),
                <double*>np.PyArray_DATA(output_array),
@@ -79,6 +125,18 @@ cpdef np.ndarray leg2cheb(input_array : np.ndarray, output_array : np.ndarray):
     return output_array
 
 cpdef np.ndarray cheb2leg(input_array : np.ndarray, output_array : np.ndarray):
+    """
+    Compute Chebyshev to Legendre transform and return output array
+
+    This function uses a direct method and should not be used for
+    arrays much larger than 10,000.
+
+    Parameters
+    ----------
+    input_array : array
+    output_array : array
+
+    """
     cdef l2c.direct_plan* plan = <l2c.direct_plan*>l2c.create_direct(input_array.shape[0], C2L)
     l2c.direct(<double*>np.PyArray_DATA(input_array),
                <double*>np.PyArray_DATA(output_array),
@@ -96,7 +154,8 @@ def Lambda(np.ndarray x):
     Parameters
     ----------
     x : array of floats
-        array can have any dimension
+        array can have any dimension and works elementwise. Returned
+        array have same shape as input array.
     """
     cdef:
         size_t N = np.PyArray_Ravel(x, np.NPY_CORDER).shape[0]
