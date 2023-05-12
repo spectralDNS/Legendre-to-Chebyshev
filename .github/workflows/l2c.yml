@@ -39,6 +39,7 @@ jobs:
         meson setup build --prefix=$PWD/build-install --includedir=$CONDA_PREFIX/include
         export PYTHONPATH=$PYTHONPATH:$PWD/build-install/lib/python${{ matrix.python-version }}/site-packages
         export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/build-install/lib
+        export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$PWD/build-install/lib
         meson configure -Dc_args=-DTEST build
         meson install -C build
         meson test -v -C build
