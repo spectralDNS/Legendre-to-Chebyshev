@@ -2,8 +2,7 @@ import sys
 from ctypes import cdll, POINTER, c_double, c_size_t, c_int, c_void_p, Structure
 from ctypes.util import find_library
 
-lib = "libleg2cheb" if sys.platform == "darwin" else "leg2cheb"
-C = cdll.LoadLibrary(find_library(lib))
+C = cdll.LoadLibrary(find_library("leg2cheb"))
 
 doublep = POINTER(c_double)
 doublepp = POINTER(POINTER(c_double))
