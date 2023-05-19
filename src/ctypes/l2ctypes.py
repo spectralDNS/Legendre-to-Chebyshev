@@ -1,9 +1,10 @@
-import sys
+#!/usr/bin/env python
+
 from ctypes import cdll, POINTER, c_double, c_size_t, c_int, c_void_p, Structure
 from ctypes.util import find_library
 
 C = cdll.LoadLibrary(find_library("leg2cheb"))
-
+print(C)
 doublep = POINTER(c_double)
 doublepp = POINTER(POINTER(c_double))
 
@@ -26,18 +27,22 @@ class fmm_plan(Structure):
                   ("TT", doublep),
                   ("Th", doublep),
                   ("ThT", doublep),
+                  ("ia", doublep),
+                  ("oa", doublep),
+                  ("wk", doublepp),
+                  ("ck", doublepp),
                   ("dplan", POINTER(direct_plan))]
 
 create_fmm = C.create_fmm
 create_fmm.restype = POINTER(fmm_plan)
-create_fmm.argtypes = [c_size_t, c_size_t, c_size_t, c_size_t]
+create_fmm.argtypes = [c_size_t, c_size_t, c_size_t, c_size_t, c_size_t]
 execute = C.execute
-execute.argtypes = [c_void_p, c_void_p, POINTER(fmm_plan), c_size_t]
+execute.argtypes = [c_void_p, c_void_p, POINTER(fmm_plan), c_size_t, c_size_t]
 create_direct = C.create_direct
 create_direct.restype = POINTER(direct_plan)
 create_direct.argtypes = [c_size_t, c_size_t]
 direct = C.direct
-direct.argtypes = [c_void_p, c_void_p, POINTER(direct_plan), c_size_t]
+direct.argtypes = [c_void_p, c_void_p, POINTER(direct_plan), c_size_t, c_size_t]
 Lambda = C._Lambda
 Lambda.restype = c_double
 
@@ -56,6 +61,8 @@ class Leg2Cheb:
     output_array : Numpy array of floats
     maxs : int
         Max size of smallest hierarchical matrix
+    M : int, optional
+        Rank of hierarchical matrices
     direction : int
         0 - Legendre to Chebyshev
         1 - Chebyshev to Legendre
@@ -64,9 +71,9 @@ class Leg2Cheb:
         Verbosity level
     """
     def __init__(self, input_array, output_array, maxs : int=36,
-                 direction : int=2, verbose : int=1):
+                 M : int=18, direction : int=2, verbose : int=1):
         self.N = input_array.shape[0]
-        self.plan = create_fmm(self.N, maxs, direction, verbose)
+        self.plan = create_fmm(self.N, maxs, M, direction, verbose)
         self._input_array = input_array
         self._output_array = output_array
         self._input_ctypes = input_array.ctypes
@@ -95,7 +102,7 @@ class Leg2Cheb:
         if input_array is not None:
             self._input_array[...] = input_array
         self._output_array[...] = 0
-        execute(self._input_ctypes, self._output_ctypes, self.plan, direction)
+        execute(self._input_ctypes, self._output_ctypes, self.plan, direction, 1)
         if output_array is not None:
             output_array[...] = self._output_array
             return output_array

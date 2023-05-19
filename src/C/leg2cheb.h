@@ -35,17 +35,33 @@ typedef struct {
   double *TT;
   double *Th;
   double *ThT;
+  double *ia;
+  double *oa;
+  double **wk;
+  double **ck;
   direct_plan *dplan;
 } fmm_plan;
 
+typedef struct {
+  fmm_plan *fmmplan0;
+  fmm_plan *fmmplan1;
+  size_t N0;
+  size_t N1;
+  int axis;
+} fmm_plan_2d;
+
 void free_fmm(fmm_plan *plan);
+void free_fmm_2d(fmm_plan_2d *plan);
 void free_direct(direct_plan *dplan);
-fmm_plan *create_fmm(size_t N, size_t maxs, size_t direction, size_t v);
+fmm_plan_2d *create_fmm_2d(size_t N0, size_t N1, int axis, size_t maxs, size_t M, size_t direction, size_t v);
+fmm_plan *create_fmm(size_t N, size_t maxs, size_t M, size_t direction, size_t v);
 direct_plan *create_direct(size_t N, size_t direction);
 size_t direct(const double *input_array, double *output_array,
-              direct_plan *dplan, size_t direction);
+              direct_plan *dplan, size_t direction, size_t stride);
+size_t execute2D(const double *input_array, double *output_array,
+                 fmm_plan_2d *fmmplan2d, size_t direction);
 size_t execute(const double *input_array, double *output_array,
-               fmm_plan *fmmplan, size_t direction);
+               fmm_plan *fmmplan, size_t direction, const size_t stride);
 double tdiff_sec(struct timeval t0, struct timeval t1);
 double _Lambda(const double z);
 void __Lambda(const double *z, double *w, size_t N);
@@ -58,8 +74,9 @@ void get_ij(size_t *ij, const size_t level, const size_t block, const size_t s,
 // Tests
 void test_foreward_backward(size_t N, size_t maxs, double m, size_t verbose);
 void test_speed(size_t N, size_t maxs, size_t repeat, size_t direction,
-                size_t verbose);
+                size_t M, size_t verbose);
 void test_direct(size_t N, size_t verbose);
 void test_2_sizes(size_t N, size_t maxs, size_t verbose);
+void test_foreward_2d(size_t N0, size_t N1, size_t maxs, size_t verbose);
 
 #endif

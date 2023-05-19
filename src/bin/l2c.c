@@ -65,8 +65,12 @@ int main(int argc, char *argv[]) {
     test_direct(N, verbose);
     break;
 
+  case 4:
+    test_foreward_2d(N, 2*N, maxs, verbose);
+    break;
+
   default:
-    test_speed(N, maxs, repeat, direction, verbose);
+    test_speed(N, maxs, repeat, direction, 18, verbose);
     break;
   }
 }
