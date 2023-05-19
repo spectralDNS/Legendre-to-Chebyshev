@@ -11,7 +11,8 @@ This is first and foremost the implementation of a Fast Multipole Method similar
 There are several implementations in the src directory:
   * python - A short, vectorized Python implementation
   * C - An efficient C implementation
-  * cython - Wrapping of the fast C code
+  * cython - Wrapping of the fast C code using cython
+  * ctypes - Wrapping of the fast C code using ctypes
   * Multiprec - Multiprecision implementations of a direct method using both Python and C++. The multiprecision methods are only used for verification.
 
 In addition there are
