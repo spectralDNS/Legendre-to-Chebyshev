@@ -125,7 +125,7 @@ size_t directM(const double *input_array, double *output_array,
   const double *a = fmmplan->dplan->a;
   size_t flops = 0;
   size_t h = 2 * s;
-  size_t nL = get_number_of_blocks(fmmplan->L);
+  size_t nL = N / h;
 
   //// This is the most straightforward implementation
   // for (size_t n = 0; n < s; n++) {
@@ -244,8 +244,8 @@ size_t directL(const double *input, double *output_array, fmm_plan *fmmplan,
   size_t N = fmmplan->N;
   const double *an = fmmplan->dplan->an;
   const double *dn = fmmplan->dplan->dn;
-  size_t nL = get_number_of_blocks(fmmplan->L);
   size_t h = 2 * s;
+  size_t nL = N / h;
   const double SPI = sqrt(M_PI);
   size_t flops = 0;
   double *op = &output_array[0];
