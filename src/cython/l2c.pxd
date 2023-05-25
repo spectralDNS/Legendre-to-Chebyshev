@@ -24,6 +24,7 @@ cdef extern from "../C/leg2cheb.h":
         double* ThT
         double *ia
         double *oa
+        double *work
         double **wk
         double **ck
         direct_plan* dplan

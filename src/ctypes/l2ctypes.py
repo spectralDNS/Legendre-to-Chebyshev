@@ -4,14 +4,15 @@ from ctypes import cdll, POINTER, c_double, c_size_t, c_int, c_void_p, Structure
 from ctypes.util import find_library
 
 C = cdll.LoadLibrary(find_library("leg2cheb"))
-print(C)
 doublep = POINTER(c_double)
 doublepp = POINTER(POINTER(c_double))
 
 class direct_plan(Structure):
     __fields__ = [("direction", c_size_t),
                   ("N", c_size_t),
+                  ("Nmax", c_size_t),
                   ("a", doublep),
+                  ("aa0", doublepp),
                   ("dn", doublep),
                   ("an", doublep)]
 
@@ -29,6 +30,7 @@ class fmm_plan(Structure):
                   ("ThT", doublep),
                   ("ia", doublep),
                   ("oa", doublep),
+                  ("work", doublep),
                   ("wk", doublepp),
                   ("ck", doublepp),
                   ("dplan", POINTER(direct_plan))]
@@ -40,7 +42,7 @@ execute = C.execute
 execute.argtypes = [c_void_p, c_void_p, POINTER(fmm_plan), c_size_t, c_size_t]
 create_direct = C.create_direct
 create_direct.restype = POINTER(direct_plan)
-create_direct.argtypes = [c_size_t, c_size_t]
+create_direct.argtypes = [c_size_t, c_size_t, c_size_t]
 direct = C.direct
 direct.argtypes = [c_void_p, c_void_p, POINTER(direct_plan), c_size_t, c_size_t]
 Lambda = C._Lambda

@@ -5,7 +5,6 @@ from mpmath import mp
 
 mp.dps = 50
 
-#Lambda = lambda z: mp.exp(mp.loggamma(z + mp.mpf('1/2')) - mp.loggamma(z+1))
 Lambda = lambda z: mp.gamma(z+mp.mpf('1/2')) / mp.gamma(z+1)
 
 def leg2chebmp(u, b, N):

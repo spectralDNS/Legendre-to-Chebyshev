@@ -37,6 +37,10 @@ cdef class Leg2Cheb:
         2 - Assemble for both directions
     verbose : int, optional
         Verbosity level
+
+    Note
+    ----
+    Input arrays are overwritten
     """
     cdef:
         l2c.fmm_plan* plan

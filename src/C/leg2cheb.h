@@ -37,6 +37,7 @@ typedef struct {
   double *ThT;
   double *ia;
   double *oa;
+  double *work;
   double **wk;
   double **ck;
   direct_plan *dplan;
@@ -77,6 +78,8 @@ void test_speed(size_t N, size_t maxs, size_t repeat, size_t direction,
                 size_t M, size_t verbose);
 void test_direct(size_t N, size_t verbose);
 void test_2_sizes(size_t N, size_t maxs, size_t verbose);
-void test_foreward_2d(size_t N0, size_t N1, size_t maxs, size_t verbose);
+void test_foreward_2d(size_t N0, size_t N1, size_t maxs, size_t verbose, size_t direction);
+void test_foreward_backward_2d(size_t N0, size_t N1, size_t maxs, size_t verbose);
+void test_directM(size_t N, size_t repeat, size_t verbose);
 
 #endif
