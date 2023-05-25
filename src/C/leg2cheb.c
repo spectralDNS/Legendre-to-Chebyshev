@@ -562,6 +562,9 @@ void free_fmm(fmm_plan *plan) {
 
 direct_plan *create_direct(size_t N, size_t direction) {
   direct_plan *dplan = (direct_plan *)malloc(sizeof(direct_plan));
+  dplan->a = NULL;
+  dplan->an = NULL;
+  dplan->dn = NULL;
   if (direction == L2C | direction == BOTH) {
     double *a = (double *)malloc(N * sizeof(double));
     for (size_t i = 0; i < N; i++)
