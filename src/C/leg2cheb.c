@@ -1049,10 +1049,6 @@ void test_speed(size_t N, size_t maxs, size_t repeat, size_t direction,
     double s1 = tdiff_sec(r0, r1);
     min_time = s1 < min_time ? s1 : min_time;
   }
-  // for (size_t i = 0; i < N; i++) {
-  //   printf("%lu  %2.6e\n", i, output_array[i]);
-  // }
-
   gettimeofday(&t1, 0);
   printf("Timing N %6lu avg / min = %2.4e / %2.4e flops = %lu\n", N,
          tdiff_sec(t0, t1) / repeat, min_time, flops);

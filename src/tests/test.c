@@ -5,7 +5,7 @@ int main(int argc, char *argv[]) {
   test_foreward_backward(1000, 36, 1, 1);
   test_foreward_backward(10000, 100, 0, 1);
   test_foreward_backward(10000, 36, 1, 1);
-  test_speed(200, 10, 100, 0, 18, 2);
+  test_speed(200, 16, 10, 0, 18, 2);
   for (size_t i = 4; i < 12; i++)
     test_speed(36*pow(2, i+2), 36, 10, 0, 18, 2);
   test_direct(10, 0);

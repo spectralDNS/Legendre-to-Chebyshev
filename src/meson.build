@@ -12,10 +12,13 @@ cblas = dependency('openblas')
 fftw = dependency('fftw3')
 omp = dependency('openmp', required : false)
 deps = [cblas, fftw, omp]
-add_global_arguments(['-DTRI', '-DOMP'], language : 'c')
+add_global_arguments(['-DTRI'], language : 'c')
 add_global_link_arguments(['-lm'], language : 'c')
 #add_global_link_arguments('-lc', language : 'c')
 add_global_arguments('-std=c++11', language : 'cpp')
+if omp.found()
+  add_global_arguments(['-DOMP'], language : 'c')
+endif
 
 subdir('C')
 subdir('cython')
