@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+//#include <Accelerate/Accelerate.h>
 #ifdef OMP
 #include <omp.h>
 #endif
@@ -32,7 +33,6 @@ typedef struct {
   size_t s;
   double **A;
   double *T;
-  double *TT;
   double *Th;
   double *ThT;
   double *ia;
@@ -70,16 +70,19 @@ size_t get_number_of_blocks(const size_t level);
 size_t get_h(const size_t level, const size_t L);
 size_t get_number_of_submatrices(const size_t N, const size_t s,
                                  const size_t L);
+size_t get_total_number_of_blocks(const size_t N, const size_t s,
+                                  const size_t L);
 void get_ij(size_t *ij, const size_t level, const size_t block, const size_t s,
             const size_t L);
 // Tests
-void test_foreward_backward(size_t N, size_t maxs, double m, size_t verbose);
+void test_forward_backward(size_t N, size_t maxs, size_t M, double m, bool random, size_t verbose);
 void test_speed(size_t N, size_t maxs, size_t repeat, size_t direction,
                 size_t M, size_t verbose);
 void test_direct(size_t N, size_t verbose);
 void test_2_sizes(size_t N, size_t maxs, size_t verbose);
-void test_foreward_2d(size_t N0, size_t N1, size_t maxs, size_t verbose, size_t direction);
-void test_foreward_backward_2d(size_t N0, size_t N1, size_t maxs, size_t verbose);
+void test_forward_2d(size_t N0, size_t N1, size_t maxs, size_t verbose, size_t direction);
+void test_forward_backward_2d(size_t N0, size_t N1, size_t maxs, size_t verbose);
 void test_directM(size_t N, size_t repeat, size_t verbose);
+void test_direct_speed(size_t N, size_t repeat, size_t direction, size_t verbose);
 
 #endif

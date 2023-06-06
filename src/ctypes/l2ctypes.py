@@ -10,9 +10,7 @@ doublepp = POINTER(POINTER(c_double))
 class direct_plan(Structure):
     __fields__ = [("direction", c_size_t),
                   ("N", c_size_t),
-                  ("Nmax", c_size_t),
                   ("a", doublep),
-                  ("aa0", doublepp),
                   ("dn", doublep),
                   ("an", doublep)]
 
@@ -25,7 +23,6 @@ class fmm_plan(Structure):
                   ("s", c_size_t),
                   ("A", doublepp),
                   ("T", doublep),
-                  ("TT", doublep),
                   ("Th", doublep),
                   ("ThT", doublep),
                   ("ia", doublep),

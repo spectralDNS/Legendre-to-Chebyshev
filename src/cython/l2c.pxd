@@ -19,7 +19,6 @@ cdef extern from "../C/leg2cheb.h":
         size_t s
         double** A
         double* T
-        double* TT
         double* Th
         double* ThT
         double *ia

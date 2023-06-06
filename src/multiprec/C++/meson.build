@@ -1,5 +1,11 @@
+prefix = get_option('prefix')
+lib_dir = prefix / get_option('libdir')
 l2cprec = executable('l2cprec',
                      'L2Cprec.cpp',
-                     dependencies : cblas) # hack link to get include directories
+                     include_directories : '../../C',
+                     link_with : l2clib,
+                     install_rpath : lib_dir,
+                     install : true)
+                     #dependencies : cblas) # hack link to get include directories
 test('test multiprecision boost',
-     l2cprec, args : ['-N100', '-m0'])
+     l2cprec, args : ['-N100', '-m0', '-a0'])

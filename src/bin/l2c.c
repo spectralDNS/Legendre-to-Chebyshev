@@ -4,9 +4,11 @@
 int main(int argc, char *argv[]) {
   int opt;
   size_t N;
-  size_t maxs = 36;
+  size_t maxs = 64;
   size_t verbose = 2;
   size_t num_threads = 1;
+  size_t M = 18;
+  bool R = false;
   double m = 0;
   size_t repeat = 1;
   unsigned direction;
@@ -15,7 +17,8 @@ int main(int argc, char *argv[]) {
       "  -h      Show this message\n"
       "  -N      Size of transform\n"
       "  -s      Estimated max size of smallest submatrix  (optional, "
-      "default=36)\n"
+      "default=64)\n"
+      "  -M      Chebyshev coefficients (optional, default=18)\n"
       "  -m      Data decay coefficient (optional, default=0). \n"
       "  -r      Repeat computation this many times (for timing, default=1)\n"
       "  -v      Level of verbosity (optional, default=0)\n"
@@ -26,7 +29,7 @@ int main(int argc, char *argv[]) {
       "       2 - Test accuracy of one transform back and forth\n"
       "       3 - Test direct transform back and forth\n";
 
-  while ((opt = getopt(argc, argv, ":N:d:s::m::r::v::t::h")) != -1) {
+  while ((opt = getopt(argc, argv, ":N:d:s::M::m::r::v::t::R::h")) != -1) {
     switch (opt) {
     case 'N':
       N = atoi(optarg);
@@ -49,6 +52,12 @@ int main(int argc, char *argv[]) {
     case 't':
       num_threads = atoi(optarg);
       break;
+    case 'M':
+      M = atoi(optarg);
+      break;
+    case 'R':
+      R = atoi(optarg);
+      break;
     case 'h':
       puts(help);
       return 0;
@@ -63,7 +72,7 @@ int main(int argc, char *argv[]) {
 #endif
   switch (direction) {
   case 2:
-    test_foreward_backward(N, maxs, m, verbose);
+    test_forward_backward(N, maxs, M, m, R, verbose);
     break;
 
   case 3:
@@ -71,17 +80,21 @@ int main(int argc, char *argv[]) {
     break;
 
   case 4:
-    test_foreward_2d(N, N, maxs, verbose, L2C);
-    //test_foreward_2d(N, 2*N, maxs, verbose, C2L);
+    test_forward_2d(N, N, maxs, verbose, L2C);
+    //test_forward_2d(N, 2*N, maxs, verbose, C2L);
     break;
 
   case 5:
-    test_foreward_backward_2d(N, N, maxs, verbose);
+    test_forward_backward_2d(N, N, maxs, verbose);
+    break;
+
+  case 6:
+    test_direct_speed(N, repeat, direction, verbose);
     break;
 
   case 0:
   case 1:
-    test_speed(N, maxs, repeat, direction, 18, verbose);
+    test_speed(N, maxs, repeat, direction, M, verbose);
     break;
 
   default:
