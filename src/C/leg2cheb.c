@@ -231,8 +231,8 @@ size_t directM(const double *input_array, double *output_array,
   }
   double *op = &output_array[0];
   if (strides == 1) {
-#pragma omp parallel for
     {
+      #pragma omp parallel for
       for (size_t i = 0; i < N; i++)
         output_array[i] *= M_2_PI;
     }
