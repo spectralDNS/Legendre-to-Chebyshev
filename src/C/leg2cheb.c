@@ -229,7 +229,6 @@ size_t directM(const double *input_array, double *output_array,
       flops += 3 * (Nm - n);
     }
   }
-
   double *op = &output_array[0];
   if (strides == 1) {
 #pragma omp parallel for
@@ -690,7 +689,6 @@ fmm_plan *create_fmm(size_t N, size_t maxs, size_t M, size_t direction,
   plan1d = fftw_plan_r2r_1d(M, fun, fun_hat, FFTW_REDFT10, FFTW_ESTIMATE);
   plan = fftw_plan_r2r_2d(M, M, fun, fun_hat, FFTW_REDFT10, FFTW_REDFT10,
                           FFTW_ESTIMATE);
-
   for (size_t di = 0; di < num_directions; di++) {
     size_t dir = directions[di];
     double *ap = A[dir];
@@ -730,6 +728,7 @@ fmm_plan *create_fmm(size_t N, size_t maxs, size_t M, size_t direction,
       }
     }
   }
+
   double *T = (double *)fftw_malloc(2 * s * M * sizeof(double));
   vandermonde(T, s, M);
   fmmplan->T = T;
