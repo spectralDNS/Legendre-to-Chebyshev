@@ -96,5 +96,6 @@ void test_forward_2d(size_t N0, size_t N1, size_t maxs, size_t verbose, size_t d
 void test_forward_backward_2d(size_t N0, size_t N1, size_t maxs, size_t verbose);
 void test_directM(size_t N, size_t repeat, size_t verbose);
 void test_direct_speed(size_t N, size_t repeat, size_t direction, size_t verbose);
+void test_dct(size_t N, size_t repeat);
 
 #endif
