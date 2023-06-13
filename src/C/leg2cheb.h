@@ -3,6 +3,7 @@
 
 #include "fftw3.h"
 #include <assert.h>
+#include <unistd.h>
 #include <cblas.h>
 #include <math.h>
 #include <stdbool.h>

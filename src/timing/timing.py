@@ -84,6 +84,24 @@ time_saga = np.array([
     [8388608, 6.7243e-01],
 ])
 
+dct = np.array([
+    [256, 1.167000e-06],
+    [512, 2.067000e-06],
+    [1024, 4.120000e-06],
+    [2048, 8.452000e-06],
+    [4096, 1.798300e-05],
+    [8192, 4.244600e-05],
+    [16384, 1.043920e-04],
+    [32768, 2.029750e-04],
+    [65536, 4.585910e-04],
+    [131072, 1.080215e-03],
+    [262144, 2.330883e-03],
+    [524288, 5.372801e-03],
+    [1048576, 1.197100e-02],
+    [2097152, 2.937000e-02],
+    [4194304, 6.572400e-02],
+    [8388608, 1.421990e-01]
+])
 
 #time = np.array([
 #       [2.56000000e+02, 5.00000000e-06, 4.42080000e+04, 2.23400000e-03],
@@ -127,9 +145,10 @@ plt.loglog(
            #TH[:, 0], TH[:, 2], 'm',
            time[:, 0], time[:, 0]*time[3, 1]/time[3, 0], 'k',
            TH[:, 0], np.log(TH[:, 0])**2*TH[:, 0]*1e-8, 'k--',
-           time[:, 0], time[:, 3], 'k:')
+           time[:, 0], time[:, 3], 'k:',
+           dct[:, 0], dct[:, 1], 'g')
 plt.xlabel('N')
 plt.ylabel('Execution time [s]')
-plt.legend(['FMM-OSX', 'FMM-Intel', 'TH-OSX', 'TH-Intel', '$\mathcal{O}(N)$', '$\mathcal{O}(N \log^2 N)$', 'Plan FMM'])
+plt.legend(['FMM-OSX', 'FMM-Intel', 'TH-OSX', 'TH-Intel', '$\mathcal{O}(N)$', '$\mathcal{O}(N \log^2 N)$', 'Plan FMM', 'DCT-OSX'])
 plt.savefig('speed.png')
 plt.show()

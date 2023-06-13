@@ -45,10 +45,6 @@ double lxy(const double *x, const double *y) {
          _Lambda(((*y) - (*x) - 2) / 2) * _Lambda(((*y) + (*x) - 1) / 2);
 }
 
-double tdiff_sec(struct timeval t0, struct timeval t1) {
-  return (t1.tv_sec - t0.tv_sec) + (t1.tv_usec - t0.tv_usec) / 1000000.0;
-}
-
 size_t get_number_of_blocks(const size_t level) {
   return pow(2, level + 1) - 1;
 }
@@ -613,7 +609,6 @@ fmm_plan *create_fmm(size_t N, size_t maxs, size_t M, size_t direction,
   size_t Nn;
   size_t s;
   size_t ij[2];
-  struct timeval t1, t2;
   size_t directions[2];
   size_t num_directions = 2;
   switch (direction) {
@@ -669,7 +664,8 @@ fmm_plan *create_fmm(size_t N, size_t maxs, size_t M, size_t direction,
     printf("Computed s %lu \n", s);
     printf("Computed N %lu\n", Nn);
   }
-  gettimeofday(&t1, 0);
+
+  uint64_t t1 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
   if (direction == BOTH) {
     A[0] = (double *)fftw_malloc(get_number_of_submatrices(Nn, s, L) * M * M *
                                  sizeof(double));
@@ -784,9 +780,9 @@ fmm_plan *create_fmm(size_t N, size_t maxs, size_t M, size_t direction,
   free(xj);
   fmmplan->Th = Th;
   fmmplan->ThT = ThT;
-  gettimeofday(&t2, 0);
+  uint64_t t2 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
   if (v > 1)
-    printf("Initialization %2.4e s\n", tdiff_sec(t1, t2));
+    printf("Initialization %2.4e s\n", (double)(t2-t1)*1.0E-9);
   return fmmplan;
 }
 
@@ -1082,23 +1078,21 @@ void test_speed(size_t N, size_t maxs, size_t repeat, size_t direction,
   for (size_t i = 0; i < N; i++)
     input_array[i] = 1.0;
 
-  struct timeval t0, t1;
-  gettimeofday(&t0, 0);
+  uint64_t t0 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
   double min_time = 1e8;
   size_t flops;
   for (size_t i = 0; i < repeat; i++) {
-    struct timeval r0, r1;
-    gettimeofday(&r0, 0);
+    uint64_t g0 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
     for (size_t j = 0; j < N; j++)
       output_array[j] = 0.0;
     flops = execute(input_array, output_array, fmmplan, direction, 1);
-    gettimeofday(&r1, 0);
-    double s1 = tdiff_sec(r0, r1);
+    uint64_t g1 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+    double s1 = (double)(g1-g0)/1.0E9;
     min_time = s1 < min_time ? s1 : min_time;
   }
-  gettimeofday(&t1, 0);
+  uint64_t t1 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
   printf("Timing N %6lu avg / min = %2.4e / %2.4e flops = %lu\n", N,
-         tdiff_sec(t0, t1) / repeat, min_time, flops);
+         (double)(t1-t0) / repeat / 1.0E9, min_time, flops);
   free(input_array);
   free(output_array);
   free_fmm(fmmplan);
@@ -1116,23 +1110,21 @@ void test_direct_speed(size_t N, size_t repeat, size_t direction,
   for (size_t i = 0; i < N; i++)
     input_array[i] = 1.0;
 
-  struct timeval t0, t1;
-  gettimeofday(&t0, 0);
+  uint64_t t0 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
   double min_time = 1e8;
   size_t flops;
   for (size_t i = 0; i < repeat; i++) {
-    struct timeval r0, r1;
-    gettimeofday(&r0, 0);
+    uint64_t r0 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
     for (size_t j = 0; j < N; j++)
       output_array[j] = 0.0;
     flops = direct(input_array, output_array, dplan, direction, 1);
-    gettimeofday(&r1, 0);
-    double s1 = tdiff_sec(r0, r1);
+    uint64_t r1 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+    double s1 = (double)(r1-r0)*1.0E-9;
     min_time = s1 < min_time ? s1 : min_time;
   }
-  gettimeofday(&t1, 0);
+  uint64_t t1 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
   printf("Timing N %6lu avg / min = %2.4e / %2.4e flops = %lu\n", N,
-         tdiff_sec(t0, t1) / repeat, min_time, flops);
+         (double)(t1-t0) / repeat / 1.0E9, min_time, flops);
   free(input_array);
   free(output_array);
   free_direct(dplan);
@@ -1291,15 +1283,35 @@ void test_directM(size_t N, size_t repeat, size_t verbose) {
   size_t flops;
   double min_time = 1e8;
   for (size_t i = 0; i < repeat; i++) {
-    struct timeval r0, r1;
-    gettimeofday(&r0, 0);
+    uint64_t r0 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
     flops = directM(input_array, output_array, fmmplan, 1);
-    gettimeofday(&r1, 0);
-    double s1 = tdiff_sec(r0, r1);
+    uint64_t r1 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+    double s1 = (double)(r1-r0)*1.0E-9;
     min_time = s1 < min_time ? s1 : min_time;
   }
   printf("directM min time %2.6e\n", min_time);
   free(input_array);
   free(output_array);
   free_fmm(fmmplan);
+}
+
+void test_dct(size_t N, size_t repeat) {
+
+  double *fun = (double *)fftw_malloc(N * sizeof(double));
+  double *fun_hat = (double *)fftw_malloc(N * sizeof(double));
+  fftw_plan plan1d = fftw_plan_r2r_1d(N, fun, fun_hat, FFTW_REDFT10, FFTW_MEASURE);
+  double min_time = 1e8;
+  uint64_t t0 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+  for (size_t i = 0; i < repeat; i++) {
+    uint64_t g0 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+    fftw_execute(plan1d);
+    uint64_t g1 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+    double s1 = (double)(g1-g0)*1.0E-9;
+    min_time = s1 < min_time ? s1 : min_time;
+  }
+  uint64_t t1 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+  printf("%lu %2.6e %2.6e\n", N, min_time, (double)(t1-t0)/repeat/1.0E9);
+  fftw_free(fun);
+  fftw_free(fun_hat);
+  fftw_destroy_plan(plan1d);
 }

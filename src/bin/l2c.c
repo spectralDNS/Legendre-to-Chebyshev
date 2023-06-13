@@ -97,6 +97,10 @@ int main(int argc, char *argv[]) {
     test_speed(N, maxs, repeat, direction, M, verbose);
     break;
 
+  case 7:
+    test_dct(N, repeat);
+    break;
+
   default:
     test_directM(N, repeat, verbose);
     break;
