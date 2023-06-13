@@ -665,7 +665,7 @@ fmm_plan *create_fmm(size_t N, size_t maxs, size_t M, size_t direction,
     printf("Computed N %lu\n", Nn);
   }
 
-  uint64_t t1 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+  uint64_t t1 = tic();
   if (direction == BOTH) {
     A[0] = (double *)fftw_malloc(get_number_of_submatrices(Nn, s, L) * M * M *
                                  sizeof(double));
@@ -780,9 +780,9 @@ fmm_plan *create_fmm(size_t N, size_t maxs, size_t M, size_t direction,
   free(xj);
   fmmplan->Th = Th;
   fmmplan->ThT = ThT;
-  uint64_t t2 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+  uint64_t t2 = toc();
   if (v > 1)
-    printf("Initialization %2.4e s\n", (double)(t2-t1)*1.0E-9);
+    printf("Initialization %2.4e s\n", tosec(t1, t2));
   return fmmplan;
 }
 
