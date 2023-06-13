@@ -1078,21 +1078,21 @@ void test_speed(size_t N, size_t maxs, size_t repeat, size_t direction,
   for (size_t i = 0; i < N; i++)
     input_array[i] = 1.0;
 
-  uint64_t t0 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+  uint64_t t0 = tic();
   double min_time = 1e8;
   size_t flops;
   for (size_t i = 0; i < repeat; i++) {
-    uint64_t g0 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+    uint64_t g0 = tic();
     for (size_t j = 0; j < N; j++)
       output_array[j] = 0.0;
     flops = execute(input_array, output_array, fmmplan, direction, 1);
-    uint64_t g1 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
-    double s1 = (double)(g1-g0)/1.0E9;
+    uint64_t g1 = toc();
+    double s1 = tosec(g0, g1);
     min_time = s1 < min_time ? s1 : min_time;
   }
-  uint64_t t1 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+  uint64_t t1 = toc();
   printf("Timing N %6lu avg / min = %2.4e / %2.4e flops = %lu\n", N,
-         (double)(t1-t0) / repeat / 1.0E9, min_time, flops);
+         tosec(t0, t1) / repeat , min_time, flops);
   free(input_array);
   free(output_array);
   free_fmm(fmmplan);
@@ -1110,21 +1110,21 @@ void test_direct_speed(size_t N, size_t repeat, size_t direction,
   for (size_t i = 0; i < N; i++)
     input_array[i] = 1.0;
 
-  uint64_t t0 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+  uint64_t t0 = tic();
   double min_time = 1e8;
   size_t flops;
   for (size_t i = 0; i < repeat; i++) {
-    uint64_t r0 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+    uint64_t r0 = tic();
     for (size_t j = 0; j < N; j++)
       output_array[j] = 0.0;
     flops = direct(input_array, output_array, dplan, direction, 1);
-    uint64_t r1 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
-    double s1 = (double)(r1-r0)*1.0E-9;
+    uint64_t r1 = toc();
+    double s1 = tosec(r0, r1);
     min_time = s1 < min_time ? s1 : min_time;
   }
-  uint64_t t1 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+  uint64_t t1 = toc();
   printf("Timing N %6lu avg / min = %2.4e / %2.4e flops = %lu\n", N,
-         (double)(t1-t0) / repeat / 1.0E9, min_time, flops);
+         tosec(t0, t1) / repeat, min_time, flops);
   free(input_array);
   free(output_array);
   free_direct(dplan);
@@ -1283,10 +1283,10 @@ void test_directM(size_t N, size_t repeat, size_t verbose) {
   size_t flops;
   double min_time = 1e8;
   for (size_t i = 0; i < repeat; i++) {
-    uint64_t r0 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+    uint64_t r0 = tic();
     flops = directM(input_array, output_array, fmmplan, 1);
-    uint64_t r1 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
-    double s1 = (double)(r1-r0)*1.0E-9;
+    uint64_t r1 = toc();
+    double s1 = tosec(r0, r1);
     min_time = s1 < min_time ? s1 : min_time;
   }
   printf("directM min time %2.6e\n", min_time);
@@ -1301,16 +1301,16 @@ void test_dct(size_t N, size_t repeat) {
   double *fun_hat = (double *)fftw_malloc(N * sizeof(double));
   fftw_plan plan1d = fftw_plan_r2r_1d(N, fun, fun_hat, FFTW_REDFT10, FFTW_MEASURE);
   double min_time = 1e8;
-  uint64_t t0 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+  uint64_t t0 = tic();
   for (size_t i = 0; i < repeat; i++) {
-    uint64_t g0 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+    uint64_t g0 = tic();
     fftw_execute(plan1d);
-    uint64_t g1 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
-    double s1 = (double)(g1-g0)*1.0E-9;
+    uint64_t g1 = toc();
+    double s1 = tosec(g0, g1);
     min_time = s1 < min_time ? s1 : min_time;
   }
-  uint64_t t1 = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
-  printf("%lu %2.6e %2.6e\n", N, min_time, (double)(t1-t0)/repeat/1.0E9);
+  uint64_t t1 = toc();
+  printf("%lu %2.6e %2.6e\n", N, min_time, tosec(t0, t1)/repeat);
   fftw_free(fun);
   fftw_free(fun_hat);
   fftw_destroy_plan(plan1d);

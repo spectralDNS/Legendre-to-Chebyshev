@@ -10,12 +10,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
+#include <time.h>
 //#include <Accelerate/Accelerate.h>
 #ifdef OMP
 #include <omp.h>
 #endif
 enum { L2C = 0, C2L = 1, BOTH = 2 };
+
+#ifdef CLOCK_UPTIME_RAW
+#define tic() clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
+#define toc() clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
+#define tosec(a, b) (double)(b-a)/1.0E9
+#else
+#define tic() clock()
+#define toc() clock()
+#define tosec(a, b) (double)(b-a)/(double)CLOCKS_PER_SEC
+#endif
+
 
 typedef struct {
   size_t direction;
