@@ -15,9 +15,8 @@ There are several implementations in the src directory:
   * ctypes - Wrapping of the fast C code using ctypes
   * Multiprec - Multiprecision implementations of a direct method using both Python and C++. The multiprecision methods are only used for verification.
 
-In addition there are
-  * test - Some test routines
-  * bin - An executable that can run various tests
+In addition there is
+  * bin - An executable l2c that can run various tests
 
 # Installation
 The code is set up to be compiled with the [meson](https://mesonbuild.com) build system. It should work by cloning this repository and then 
