@@ -22,8 +22,8 @@ endif
 subdir('C')
 subdir('cython')
 subdir('ctypes')
-subdir('tests')
 subdir('bin')
+subdir('python')
 subdir('multiprec/python')
 subdir('multiprec/C++')
 

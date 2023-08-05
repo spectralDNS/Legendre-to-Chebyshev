@@ -17,7 +17,7 @@ def leg2chebmp(u, b, N):
         b[i] *= (2/mp.pi)
 
 def cheb2legmp(u, b, N):
-    dn = [Lambda(i-1)/(2*i) for i in range(1, N//2)]
+    dn = [Lambda(i-1)/(2*i) for i in range(1, (N+1)//2)]
     dn.insert(0, 0)
     a = [1/(2*Lambda(i)*i*(i+mp.mpf('1/2'))) for i in range(1, N)]
     a.insert(0, 2/mp.sqrt(mp.pi))
@@ -33,7 +33,7 @@ def cheb2legmp(u, b, N):
         b[n] *= (n+mp.mpf('1/2'))
 
 if __name__ == '__main__':
-    N = 10
+    N = 11
     u = mp.matrix([mp.mpf('1')]*N)
     b = mp.matrix([mp.mpf('0')]*N)
     c = mp.matrix([mp.mpf('0')]*N)

@@ -7,3 +7,10 @@ test('test pure python',
        'Leg2Cheb.py',
      ],
      workdir: meson.current_source_dir())
+
+test('test cython',
+     py,
+     args: [
+       'test.py',
+     ],
+     workdir: meson.current_source_dir())

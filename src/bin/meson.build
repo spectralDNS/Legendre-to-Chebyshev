@@ -9,4 +9,9 @@ l2c = executable('l2c',
                  install_rpath : lib_dir,
                  link_with : l2clib)
 
-test('test l2c', l2c, args : ['-N1000', '-d2'])
+test('test l2c forward-backward N1000', l2c, args : ['-N1000', '-d2'])
+test('test l2c forward-backward N100', l2c, args : ['-N100', '-d2'])
+test('test l2c direct', l2c, args : ['-N100', '-d3'])
+test('test l2c forward 2d', l2c, args : ['-N400', '-d4'])
+test('test l2c forward-backward 2d', l2c, args : ['-N400', '-d5'])
+test('test l2c dct', l2c, args : ['-N400', '-d4'])

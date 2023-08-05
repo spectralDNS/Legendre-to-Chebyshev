@@ -8,7 +8,7 @@ Mxy = lambda x, y: Lambda((y-x)/2)*Lambda((y+x)/2)
 Lxy = lambda x, y: -1/(x+y+1)/(y-x)*Lambda((y-x-2)/2)*Lambda((y+x-1)/2)
 
 class Leg2Cheb:
-    def __init__(self, input_array, M=18, s=36, fun=Mxy):
+    def __init__(self, input_array, M=18, s=64, fun=Mxy):
         self.M = M
         N = input_array.shape[0]
         self.L = L = np.ceil(np.log2(N/s)-2).astype(int)
@@ -133,12 +133,14 @@ class Cheb2Leg(Leg2Cheb):
         return output_array[:N].copy()
 
 if __name__ == '__main__':
-    N = 500
+    N = 2048
     u = np.ones(N)
     L2C = Leg2Cheb(u)
     C2L = Cheb2Leg(u)
     a1 = L2C(u)
+    a1 = L2C(u)
     a2 = C2L(a1)
+
     error_f = np.linalg.norm(a2-u, np.inf)
     assert error_f < 1e-8
     print(f'Errornorm pure Python  : {error_f:2.6e}')
