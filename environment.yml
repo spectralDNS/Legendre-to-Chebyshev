@@ -7,6 +7,7 @@ channels:
 dependencies:
   - pip
   - numpy
+  - numba
   - cython
   - fftw
   - mpi4py-fft
