@@ -2,12 +2,6 @@
 
 long lmin(long a, long b) { return (a > b) ? b : a; }
 
-size_t min(size_t a, size_t b) { return (a > b) ? b : a; }
-
-size_t max(size_t a, size_t b) { return (a > b) ? a : b; }
-
-double fmax(double a, double b) { return (a > b) ? a : b; }
-
 double chebval(const double x, const double *c, size_t M)
 {
   const double x2 = 2 * x;

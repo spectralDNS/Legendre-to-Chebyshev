@@ -1,6 +1,12 @@
 #include "leg2cheb.h"
 #include <getopt.h>
 
+size_t min(size_t a, size_t b) { return (a > b) ? b : a; }
+
+size_t max(size_t a, size_t b) { return (a > b) ? a : b; }
+
+double fmax(double a, double b) { return (a > b) ? a : b; }
+
 void test_forward_backward(size_t N, size_t maxs, size_t M, double m,
                            bool random, size_t verbose)
 {
