@@ -3,7 +3,6 @@
 
 #include "fftw3.h"
 #include <assert.h>
-#include <unistd.h>
 #include <cblas.h>
 #include <math.h>
 #include <stdbool.h>
@@ -11,23 +10,30 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-//#include <Accelerate/Accelerate.h>
+#include <unistd.h>
+// #include <Accelerate/Accelerate.h>
 #ifdef OMP
 #include <omp.h>
 #endif
-enum { L2C = 0, C2L = 1, BOTH = 2 };
+enum
+{
+  L2C = 0,
+  C2L = 1,
+  BOTH = 2
+};
 
 #ifdef CLOCK_UPTIME_RAW
 #define tic clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
-#define dtics(a, b) (double)(b-a)/1.0E9
-#define toc(a) (double)(tic-a)/1.0E9
+#define dtics(a, b) (double)(b - a) / 1.0E9
+#define toc(a) (double)(tic - a) / 1.0E9
 #else
 #define tic clock()
-#define dtics(a, b) (double)(b-a)/(double)CLOCKS_PER_SEC
-#define toc(a) (double)(tic-a)/(double)CLOCKS_PER_SEC
+#define dtics(a, b) (double)(b - a) / (double)CLOCKS_PER_SEC
+#define toc(a) (double)(tic - a) / (double)CLOCKS_PER_SEC
 #endif
 
-typedef struct {
+typedef struct
+{
   size_t direction;
   size_t N;
   double *a;
@@ -35,7 +41,8 @@ typedef struct {
   double *an;
 } direct_plan;
 
-typedef struct {
+typedef struct
+{
   size_t direction;
   size_t M;
   size_t N;
@@ -54,7 +61,8 @@ typedef struct {
   direct_plan *dplan;
 } fmm_plan;
 
-typedef struct {
+typedef struct
+{
   fmm_plan *fmmplan0;
   fmm_plan *fmmplan1;
   size_t N0;
@@ -65,17 +73,22 @@ typedef struct {
 void free_fmm(fmm_plan *plan);
 void free_fmm_2d(fmm_plan_2d *plan);
 void free_direct(direct_plan *dplan);
-fmm_plan_2d *create_fmm_2d(size_t N0, size_t N1, int axis, size_t maxs, size_t M, size_t direction, size_t v);
-fmm_plan *create_fmm(size_t N, size_t maxs, size_t M, size_t direction, size_t v);
+fmm_plan_2d *create_fmm_2d(size_t N0, size_t N1, int axis, size_t maxs,
+                           size_t M, size_t direction, size_t v);
+fmm_plan *create_fmm(size_t N, size_t maxs, size_t M, size_t direction,
+                     size_t v);
 direct_plan *create_direct(size_t N, size_t direction);
 size_t direct(const double *input_array, double *output_array,
               direct_plan *dplan, size_t direction, size_t stride);
-size_t directnew(const double *u, double *b, direct_plan *dplan,
-                 size_t direction, size_t strides);
+size_t directM(const double *input_array, double *output_array,
+               fmm_plan *fmmplan, const size_t strides);
 size_t execute2D(const double *input_array, double *output_array,
                  fmm_plan_2d *fmmplan2d, size_t direction);
 size_t execute(const double *input_array, double *output_array,
                fmm_plan *fmmplan, size_t direction, const size_t stride);
+void matvectriZ(const double *A, const double *x, double *b, double *w,
+                const size_t m, const size_t n, const size_t lda,
+                const bool upper);
 double _Lambda(const double z);
 void __Lambda(const double *z, double *w, size_t N);
 size_t get_number_of_blocks(const size_t level);

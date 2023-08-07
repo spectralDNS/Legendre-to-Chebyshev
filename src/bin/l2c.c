@@ -342,7 +342,6 @@ void test_matvectriZ(size_t N, size_t repeat, size_t verbose)
     uint64_t r0 = tic;
     for (size_t level = fmmplan->L; level-- > 1;)
     {
-      double *w0 = fmmplan->wk[level];
       double *w1 = fmmplan->wk[level - 1];
       size_t M = fmmplan->M;
       for (size_t block = 1; block < get_number_of_blocks(level); block++)

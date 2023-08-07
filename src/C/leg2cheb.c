@@ -796,7 +796,7 @@ fmm_plan *create_fmm(size_t N, size_t maxs, size_t M, size_t direction,
   if (v > 1)
   {
     printf("N %lu\n", N);
-    printf("Num levels %lu\n", L);
+    printf("Num levels %d\n", L);
     printf("Num submatrices %lu\n", get_number_of_submatrices(Nn, s, L));
     printf("Num blocks %lu\n", get_total_number_of_blocks(Nn, s, L));
     printf("Given max s %lu \n", maxs);
@@ -981,12 +981,13 @@ fmm_plan_2d *create_fmm_2d(size_t N0, size_t N1, int axis, size_t maxs,
 size_t execute2D(const double *input_array, double *output_array,
                  fmm_plan_2d *fmmplan2d, size_t direction)
 {
+  size_t flops = 0;
   if (fmmplan2d->axis == 0)
   {
     for (size_t i = 0; i < fmmplan2d->N1; i++)
     {
-      execute(&input_array[i], &output_array[i], fmmplan2d->fmmplan0, direction,
-              fmmplan2d->N1);
+      flops += execute(&input_array[i], &output_array[i], fmmplan2d->fmmplan0, direction,
+                       fmmplan2d->N1);
     }
   }
   else if (fmmplan2d->axis == 1)
@@ -994,8 +995,8 @@ size_t execute2D(const double *input_array, double *output_array,
     for (size_t i = 0; i < fmmplan2d->N0; i++)
     {
       size_t N1 = fmmplan2d->N1;
-      execute(&input_array[i * N1], &output_array[i * N1], fmmplan2d->fmmplan1,
-              direction, 1);
+      flops += execute(&input_array[i * N1], &output_array[i * N1], fmmplan2d->fmmplan1,
+                       direction, 1);
     }
   }
   else if (fmmplan2d->axis == -1)
@@ -1004,18 +1005,19 @@ size_t execute2D(const double *input_array, double *output_array,
         (double *)calloc(fmmplan2d->N0 * fmmplan2d->N1, sizeof(double));
     for (size_t i = 0; i < fmmplan2d->N1; i++)
     {
-      execute(&input_array[i], &out[i], fmmplan2d->fmmplan0, direction,
-              fmmplan2d->N1);
+      flops += execute(&input_array[i], &out[i], fmmplan2d->fmmplan0, direction,
+                       fmmplan2d->N1);
     }
 
     for (size_t i = 0; i < fmmplan2d->N0; i++)
     {
       size_t N1 = fmmplan2d->N1;
-      execute(&out[i * N1], &output_array[i * N1], fmmplan2d->fmmplan1,
-              direction, 1);
+      flops += execute(&out[i * N1], &output_array[i * N1], fmmplan2d->fmmplan1,
+                       direction, 1);
     }
     free(out);
   }
+  return flops;
 }
 
 size_t execute(const double *input_array, double *output_array,
@@ -1118,7 +1120,6 @@ size_t execute(const double *input_array, double *output_array,
 
     for (size_t level = L; level-- > 1;)
     {
-      double *w0 = wk[level];
       double *w1 = wk[level - 1];
       for (size_t block = 1; block < get_number_of_blocks(level); block++)
       {
@@ -1164,7 +1165,6 @@ size_t execute(const double *input_array, double *output_array,
     {
       double *c0 = ck[level];
       double *c1 = ck[level + 1];
-      size_t j1 = 0;
       for (size_t block = 0; block < get_number_of_blocks(level + 1) - 1;
            block++)
       {
