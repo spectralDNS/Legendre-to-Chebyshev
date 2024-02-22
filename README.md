@@ -33,3 +33,16 @@ The installation can be tested with
 
     meson test -C build
     
+# Codespace
+Another simple way to test this code is to create a codespace. The environment.yml file in the root folder will then make sure that the codespace creates a conda environment with all necessary dependencies already built. Just press the codespace button and wait awhile for the environment to build. Then enable the environment and run some tests or test the executable `l2c` 
+
+     source activate ./env
+     cd src
+     meson setup build --prefix=$PWD/build-install
+     meson compile -C build
+     l2c -N1000 -d2 # runs a forward and backward transform and computes the error for an array of length 1000
+     meson test -C build # runs all the tests
+
+Please note that the python and cython tests will only work if the code is also installed using
+
+     meson install -C build
