@@ -27,7 +27,6 @@ subdir('bin')
 subdir('python')
 subdir('multiprec/python')
 subdir('multiprec/C++')
-subdir('simd')
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libraries : l2clib,
