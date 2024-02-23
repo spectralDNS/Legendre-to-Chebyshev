@@ -19,3 +19,4 @@ dependencies:
   - boost
   - pytest
   - scipy
+  - sympy
