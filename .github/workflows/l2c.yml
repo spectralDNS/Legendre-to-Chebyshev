@@ -36,7 +36,7 @@ jobs:
         cd src
         source activate l2c
         pip install pytest
-        meson setup build --prefix=$PWD/build-install --includedir=$CONDA_PREFIX/include
+        meson setup build --prefix=$PWD/build-install --includedir=$CONDA_PREFIX/include --libdir=$CONDA_PREFIX/lib
         export PYTHONPATH=$PYTHONPATH:$PWD/build-install/lib/python${{ matrix.python-version }}/site-packages
         export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/build-install/lib
         export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$PWD/build-install/lib

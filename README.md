@@ -19,12 +19,12 @@ In addition there is
   * bin - An executable l2c that can run various tests
 
 # Installation
-The code is set up to be compiled with the [meson](https://mesonbuild.com) build system. It should work by cloning this repository and then 
+The code is set up to be compiled with the [meson](https://mesonbuild.com) build system. It should work by cloning this repository and then
 
     cd src
-    meson setup build 
+    meson setup build
     meson install -C build
-  
+
 If you want to install just locally, then use, e.g.,
 
     meson setup build --prefix=$PWD/build-install
@@ -32,17 +32,13 @@ If you want to install just locally, then use, e.g.,
 The installation can be tested with
 
     meson test -C build
-    
-# Codespace
-Another simple way to test this code is to create a codespace. The environment.yml file in the root folder will then make sure that the codespace creates a conda environment with all necessary dependencies already built. Just press the codespace button and wait awhile for the environment to build. Then enable the environment and run some tests or test the executable `l2c` 
 
-     source activate ./env
+# Codespace
+Another simple way to test this code is to create a codespace. The environment.yml file in the root folder will then make sure that the codespace creates a conda environment with all necessary dependencies already built. Just press the codespace button and wait awhile for the environment to build. Then enable the environment and run some tests or test the executable `l2c`
+
+     source activate ./venv
      cd src
-     meson setup build --prefix=$PWD/build-install
-     meson compile -C build
+     meson setup build --prefix=$PWD/build-install --includedir=$CONDA_PREFIX/include --libdir=$CONDA_PREFIX/lib
+     meson install -C build
      l2c -N1000 -d2 # runs a forward and backward transform and computes the error for an array of length 1000
      meson test -C build # runs all the tests
-
-Please note that the python and cython tests will only work if the code is also installed using
-
-     meson install -C build
