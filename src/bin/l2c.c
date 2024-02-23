@@ -15,23 +15,19 @@ void test_forward_backward(size_t N, size_t maxs, size_t M, double m,
   fmm_plan *fmmplan = create_fmm(N, maxs, M, 2, verbose);
   double *input_array = (double *)calloc(N, sizeof(double));
   double *output_array = (double *)calloc(N, sizeof(double));
+
   // srand48((unsigned int)time(NULL));
   srand48(1);
   // Initialize some input array
-  switch (random)
-  {
-  case true:
+  if (random)
   {
     for (size_t i = 0; i < N; i++)
       input_array[i] = (2 * drand48() - 1) / pow(i + 1, m);
   }
-  break;
-  case false:
+  else
   {
     for (size_t i = 0; i < N; i++)
       input_array[i] = 1.0 / pow(i + 1, m);
-  }
-  break;
   }
 
   // Leg to Cheb
@@ -42,6 +38,9 @@ void test_forward_backward(size_t N, size_t maxs, size_t M, double m,
   double *ia = (double *)calloc(N, sizeof(double));
   // Cheb to Leg
   flops += execute(output_array, ia, fmmplan, C2L, 1);
+
+  flops = direct(input_array, output_array, fmmplan->dplan, L2C, 1);
+
   // Compute L2 error norm
   double error = 0.0;
   for (size_t j = 0; j < N; j++)
@@ -288,9 +287,9 @@ void test_forward_backward_2d(size_t N0, size_t N1, size_t maxs,
   free(output_array2);
 }
 
-void test_directM(size_t N, size_t repeat, size_t verbose)
+void test_directM(size_t N, size_t repeat, size_t verbose, size_t s, size_t M)
 {
-  fmm_plan *fmmplan = create_fmm(N, 64, 18, 2, verbose);
+  fmm_plan *fmmplan = create_fmm(N, s, M, 2, verbose);
   double *input_array = (double *)calloc(N, sizeof(double));
   double *output_array = (double *)calloc(N, sizeof(double));
   size_t flops;
@@ -332,18 +331,18 @@ void test_dct(size_t N, size_t repeat)
 
 void test_matvectriZ(size_t N, size_t repeat, size_t verbose)
 {
-  fmm_plan *fmmplan = create_fmm(N, 36, 18, 2, verbose);
+  fmm_plan *fmmplan = create_fmm(N, 64, 18, 2, verbose);
   double *input_array = (double *)calloc(N, sizeof(double));
   double *output_array = (double *)calloc(N, sizeof(double));
-  size_t flops;
   double min_time = 1e8;
   for (size_t i = 0; i < repeat; i++)
   {
     uint64_t r0 = tic;
+    size_t M = fmmplan->M;
+    ////////////
     for (size_t level = fmmplan->L; level-- > 1;)
     {
       double *w1 = fmmplan->wk[level - 1];
-      size_t M = fmmplan->M;
       for (size_t block = 1; block < get_number_of_blocks(level); block++)
       {
         size_t Nd = block * 2 * M;
@@ -351,9 +350,22 @@ void test_matvectriZ(size_t N, size_t repeat, size_t verbose)
         int b0 = (block - 1) / 2;
         int q0 = (block - 1) % 2;
         matvectriZ(&fmmplan->Th[0], wq, &w1[(b0 * 2 + q0) * M], fmmplan->work,
-                   M, M, M, true);
+                   M, M, M, false);
       }
     }
+    //////////////
+    for (size_t level = 0; level < fmmplan->L - 1; level++)
+    {
+      double *c0 = fmmplan->ck[level];
+      double *c1 = fmmplan->ck[level + 1];
+      for (size_t block = 0; block < get_number_of_blocks(level + 1) - 1;
+           block++)
+      {
+        matvectriZ(&fmmplan->ThT[0], &c0[block * M], &c1[block * 2 * M], NULL, M, M, M,
+                   true);
+      }
+    }
+    ////////////
     double s1 = toc(r0);
     min_time = s1 < min_time ? s1 : min_time;
   }
@@ -363,6 +375,70 @@ void test_matvectriZ(size_t N, size_t repeat, size_t verbose)
   free_fmm(fmmplan);
 }
 
+void test_step3(size_t N, size_t repeat, size_t verbose, size_t direction)
+{
+  fmm_plan *fmmplan = create_fmm(N, 64, 18, 2, verbose);
+  double *input_array = (double *)calloc(N, sizeof(double));
+  double *output_array = (double *)calloc(N, sizeof(double));
+  double min_time = 1e8;
+  double *A = fmmplan->A[direction];
+
+  for (size_t i = 0; i < repeat; i++)
+  {
+    uint64_t r0 = tic;
+    size_t M = fmmplan->M;
+    size_t MM = M*M;
+    size_t ik = 0;
+    for (size_t level = 0; level < fmmplan->L; level++)
+    {
+      for (size_t block = 0; block < get_number_of_blocks(level); block++)
+      {
+        size_t Nd = block * 2 * M;
+        double *cp = &fmmplan->ck[level][Nd];
+        double *wq = &fmmplan->wk[level][Nd];
+        /*for (size_t q = 0; q < 2; q++) {
+          for (size_t p = 0; p < q + 1; p++) {
+            cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &A[ik * M * M],
+                        M, &wq[q * M], 1, 1, &cp[p * M], 1);
+            ik++;
+          }
+        }
+        */
+        cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &A[ik * M], M, wq, 1,
+                    0, cp, 1);
+        cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &A[(ik + 1) * MM], M,
+                    &wq[M], 1, 1, cp, 1);
+        cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &A[(ik + 2) * MM], M,
+                    &wq[M], 1, 0, &cp[M], 1);
+        ik += 3;
+      }
+    }
+    /*ik = 0;
+    for (size_t level = 0; level < fmmplan->L; level++)
+    {
+      for (size_t block = 0; block < get_number_of_blocks(level); block++)
+      {
+        size_t Nd = block * 2 * M;
+        double *cp = &fmmplan->ck[level][Nd];
+        double *wq = &fmmplan->wk[level][Nd];
+        //cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &A[ik * M], M, wq, 1,
+        //            0, cp, 1);
+        cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &A[(ik + 1) * MM], M,
+                    &wq[M], 1, 1, cp, 1);
+        //cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &A[(ik + 2) * MM], M,
+        //            &wq[M], 1, 0, &cp[M], 1);
+        ik += 3;
+      }
+    }*/
+    ////////////
+    double s1 = toc(r0);
+    min_time = s1 < min_time ? s1 : min_time;
+  }
+  printf("Step (3) min time %2.6e\n", min_time);
+  free(input_array);
+  free(output_array);
+  free_fmm(fmmplan);
+}
 
 int main(int argc, char *argv[]) {
   int opt;
@@ -434,6 +510,11 @@ int main(int argc, char *argv[]) {
   omp_set_num_threads(num_threads);
 #endif
   switch (direction) {
+  case 0:
+  case 1:
+    test_speed(N, maxs, repeat, direction, M, verbose);
+    break;
+
   case 2:
     test_forward_backward(N, maxs, M, m, R, verbose);
     break;
@@ -454,11 +535,6 @@ int main(int argc, char *argv[]) {
     test_direct_speed(N, repeat, L2C, verbose);
     break;
 
-  case 0:
-  case 1:
-    test_speed(N, maxs, repeat, direction, M, verbose);
-    break;
-
   case 7:
     test_dct(N, repeat);
     break;
@@ -467,8 +543,12 @@ int main(int argc, char *argv[]) {
     test_matvectriZ(N, repeat, verbose);
     break;
 
+  case 9:
+    test_step3(N, repeat, verbose, 0);
+    break;
+
   default:
-    test_directM(N, repeat, verbose);
+    test_directM(N, repeat, verbose, maxs, M);
     break;
 
   }

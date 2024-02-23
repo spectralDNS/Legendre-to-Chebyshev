@@ -3,6 +3,9 @@
 
 #include "fftw3.h"
 #include <assert.h>
+#ifdef __APPLE__
+  #include <Accelerate/Accelerate.h>
+#endif
 #include <cblas.h>
 #include <math.h>
 #include <stdbool.h>
@@ -11,7 +14,6 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-// #include <Accelerate/Accelerate.h>
 #ifdef OMP
 #include <omp.h>
 #endif
@@ -93,10 +95,8 @@ double _Lambda(const double z);
 void __Lambda(const double *z, double *w, size_t N);
 size_t get_number_of_blocks(const size_t level);
 size_t get_h(const size_t level, const size_t L);
-size_t get_number_of_submatrices(const size_t N, const size_t s,
-                                 const size_t L);
-size_t get_total_number_of_blocks(const size_t N, const size_t s,
-                                  const size_t L);
+size_t get_number_of_submatrices(const size_t L);
+size_t get_total_number_of_blocks(const size_t L);
 void get_ij(size_t *ij, const size_t level, const size_t block, const size_t s,
             const size_t L);
 

@@ -55,16 +55,14 @@ size_t get_h(const size_t level, const size_t L)
   return pow(2, L - level - 1);
 }
 
-size_t get_number_of_submatrices(const size_t N, const size_t s,
-                                 const size_t L)
+size_t get_number_of_submatrices(const size_t L)
 {
-  return 3 * get_total_number_of_blocks(N, s, L);
+  return 3 * get_total_number_of_blocks(L);
 }
 
-size_t get_total_number_of_blocks(const size_t N, const size_t s,
-                                  const size_t L)
+size_t get_total_number_of_blocks(const size_t L)
 {
-  return N / (2 * s) - (L + 2);
+  return pow(2, L+1) - (L + 2);
 }
 
 void get_ij(size_t *ij, const size_t level, const size_t block, const size_t s,
@@ -97,7 +95,6 @@ size_t direct(const double *u, double *b, direct_plan *dplan, size_t direction,
       }
       flops += 3 * (N - n);
     }
-
     b[0] /= 2;
     for (size_t i = 0; i < N; i++)
     {
@@ -166,25 +163,51 @@ size_t directM(const double *input_array, double *output_array,
      }
      flops += (N - 2 * n) * 3;
    }
-  */
+   */
 
   // This implementation is faster, especially so for large N.
   // First blockwise for all but last two blocks that are complicated
   // due to N and Nn
 
+  //////////////////
+  /*
   for (size_t block = 0; block < nL - 1; block++)
   {
     size_t i0 = block * h;
-    for (size_t n = 0; n < h; n = n + 2)
+    double *vp = &output_array[i0];
+    for (size_t i = 0; i < 2 * s; i = i + 2)
+    {
+      double s0 = 0.0;
+      double s1 = 0.0;
+      const double *ap0 = &a[0];
+      const double *ap1 = &a[i0+i];
+      const double *up = &input_array[i0+i];
+      for (size_t j = i; j < 4 * s; j = j + 2)
+      {
+        s0 += (*ap0) * (*ap1++) * (*up++);
+        s1 += (*ap0++) * (*ap1) * (*up++);
+      }
+      (*vp++) += s0;
+      (*vp++) += s1;
+    }
+  }
+  */
+  /////////////////
+
+  for (size_t block = 0; block < nL - 1; block++)
+  {
+    size_t i0 = block * h;
+    for (size_t n = 0; n < 4 * s; n = n + 2)
     {
       const size_t n1 = n / 2;
       const double *ap = &a[i0 + n1];
       const double a0 = a[n1];
+      size_t i;
       if (strides == 1)
       {
         double *vp = &output_array[i0];
         const double *up = &input_array[i0 + n];
-        for (size_t i = 0; i < h; i++)
+        for (i = 0; i < lmin(h, 2*h-n); i++)
         {
           (*vp++) += a0 * (*ap++) * (*up++);
         }
@@ -193,20 +216,20 @@ size_t directM(const double *input_array, double *output_array,
       {
         double *vp = &output_array[i0 * strides];
         const double *up = &input_array[(i0 + n) * strides];
-        for (size_t i = 0; i < h; i++)
+        for (i = 0; i < lmin(h, 2*h-n); i++)
         {
           (*vp) += a0 * (*ap++) * (*up);
           vp += strides;
           up += strides;
         }
       }
-      flops += h * 3;
+      flops += i * 3;
     }
   }
 
   // Last block
   size_t i0 = (nL - 1) * h;
-  for (size_t n = 0; n < s; n++)
+  for (size_t n = 0; n < N-i0; n++)
   {
     const double *ap = &a[n + i0];
     const double a0 = a[n];
@@ -231,41 +254,6 @@ size_t directM(const double *input_array, double *output_array,
     flops += (N - (2 * n + i0)) * 3;
   }
 
-  for (size_t block = 0; block < nL; block++)
-  {
-    size_t i0 = block * h;
-    size_t j0 = h + i0;
-    const long Nm = lmin(N - j0, h);
-    for (size_t n = 0; n < h; n = n + 2)
-    {
-      if ((long)(Nm - n) < 0)
-        break;
-      const size_t n1 = (n + h) / 2;
-      const double *ap = &a[i0 + n1];
-      const double a0 = a[n1];
-      if (strides == 1)
-      {
-        double *vp = &output_array[i0];
-        const double *up = &input_array[j0 + n];
-        for (size_t i = 0; i < (size_t)(Nm - n); i++)
-        {
-          (*vp++) += a0 * (*ap++) * (*up++);
-        }
-      }
-      else
-      {
-        double *vp = &output_array[i0 * strides];
-        const double *up = &input_array[(j0 + n) * strides];
-        for (size_t i = 0; i < (size_t)(Nm - n); i++)
-        {
-          (*vp) += a0 * (*ap++) * (*up);
-          vp += strides;
-          up += strides;
-        }
-      }
-      flops += 3 * (Nm - n);
-    }
-  }
   double *op = &output_array[0];
   if (strides == 1)
   {
@@ -340,16 +328,17 @@ size_t directL(const double *input, double *output_array, fmm_plan *fmmplan,
   for (size_t block = 0; block < nL - 1; block++)
   {
     size_t i0 = block * h;
-    for (size_t n = 2; n < h; n = n + 2)
+    for (size_t n = 2; n < 4 * s; n = n + 2)
     {
       const size_t n1 = n / 2;
       const double *ap = &an[i0 + n1];
       const double d0 = dn[n1];
+      size_t i;
       if (strides == 1)
       {
         double *vp = &output_array[i0];
         const double *ia = &input[i0 + n];
-        for (size_t i = 0; i < h; i++)
+        for (i = 0; i < lmin(h, 2*h-n); i++)
         {
           (*vp++) -= d0 * (*ap++) * (*ia++);
         }
@@ -358,19 +347,19 @@ size_t directL(const double *input, double *output_array, fmm_plan *fmmplan,
       {
         double *vp = &output_array[i0 * strides];
         const double *ia = &input[i0 + n];
-        for (size_t i = 0; i < h; i++)
+        for (i = 0; i < lmin(h, 2*h-n); i++)
         {
           (*vp) -= d0 * (*ap++) * (*ia++);
           vp += strides;
         }
       }
-      flops += h * 3;
+      flops += i * 3;
     }
   }
 
   // Last two blocks
   size_t i0 = (nL - 1) * h;
-  for (size_t n = 1; n < s; n++)
+  for (size_t n = 1; n < N-i0; n++)
   {
     const double *ap = &an[n + i0];
     const double *ia = &input[i0 + 2 * n];
@@ -390,40 +379,7 @@ size_t directL(const double *input, double *output_array, fmm_plan *fmmplan,
         op += strides;
       }
     }
-    flops += (N - (2 * n - i0)) * 3;
-  }
-
-  for (size_t block = 0; block < nL; block++)
-  {
-    size_t i0 = block * h;
-    size_t j0 = h + i0;
-    const long Nm = lmin(N - j0, h);
-    for (size_t n = 0; n < h; n = n + 2)
-    {
-      const size_t n1 = (n + h) / 2;
-      double *vp = &output_array[i0 * strides];
-      const double d0 = dn[n1];
-      ap = &an[i0 + n1];
-      ia = &input[j0 + n];
-      if ((long)(Nm - n) < 0)
-        break;
-      if (strides == 1)
-      {
-        for (size_t i = 0; i < (size_t)(Nm - n); i++)
-        {
-          (*vp++) -= d0 * (*ap++) * (*ia++);
-        }
-      }
-      else
-      {
-        for (size_t i = 0; i < (size_t)(Nm - n); i++)
-        {
-          (*vp) -= d0 * (*ap++) * (*ia++);
-          vp += strides;
-        }
-      }
-      flops += 3 * (Nm - n);
-    }
+    flops += (N - (2 * n + i0)) * 3;
   }
 
   op = &output_array[0];
@@ -485,8 +441,8 @@ void matvectriZ(const double *A, const double *x, double *b, double *w,
         s1 += (*a1++) * (*z1++);
       }
       s1 += (*a1) * (*z1);
-      (*b++) += s0;
-      (*b++) += s1;
+      (*b++) = s0;
+      (*b++) = s1;
     }
   }
   else
@@ -496,59 +452,16 @@ void matvectriZ(const double *A, const double *x, double *b, double *w,
     {
       const double *ap = &A[i * lda + i];
       const double *xp = &x[i];
+      double se = 0.0;
+      double so = 0.0;
       for (size_t j = i; j < n - 1; j = j + 2)
       {
-        double se = (*ap++) * (*xp++);
-        double so = (*ap++) * (*xp++);
-        (*b) += se + so;
-        (*bp) += se - so;
+        se += (*ap++) * (*xp++);
+        so += (*ap++) * (*xp++);
       }
-      double s = (*ap++) * (*xp++);
-      (*b++) += s;
-      (*bp++) += s;
-    }
-  }
-}
-
-void matvec(const double *A, const double *x, double *b, const size_t m,
-            const size_t n, const size_t transpose)
-{
-  if (transpose == 0)
-  {
-    // cblas_dgemv(CblasRowMajor, CblasNoTrans, m, n, 1.0, A, n, x, 1, 1.0, b,
-    // 1);
-    // size_t M = m/2;
-    // for (size_t ii = 0; ii < 2; ii++) {
-    //  for (size_t jj = 0; jj < 2; jj++){
-    //    const double *xp = &x[jj*M];
-    //    const double *ap = &A[ii*M*m + jj*M];
-    //    for (size_t i = 0; i < M; i++) {
-    //      double s = 0.0;
-    //      for (size_t j = 0; j < M; j++)
-    //        s += ap[i*m + j] * xp[j];
-    //      b[ii*M+i] += s;
-    //    }
-    //  }
-    //}
-
-    for (size_t i = 0; i < 18; i++)
-    {
-      double s = 0.0;
-      const double *xp = &x[0];
-      for (size_t j = 0; j < 18; j++)
-        s += (*A++) * (*xp++);
-      (*b++) += s;
-    }
-  }
-  else
-  {
-    // cblas_dgemv(CblasRowMajor, CblasTrans, m, n, 1.0, A, n, x, 1, 0.0, b, 1);
-    for (size_t i = 0; i < m; i++)
-    {
-      double s = (*x++);
-      double *bp = &b[0];
-      for (size_t j = 0; j < n; j++)
-        (*bp++) += s * (*A++);
+      se += (*ap++) * (*xp++);
+      (*b++) += se+so;
+      (*bp++) += se-so;
     }
   }
 }
@@ -797,8 +710,8 @@ fmm_plan *create_fmm(size_t N, size_t maxs, size_t M, size_t direction,
   {
     printf("N %lu\n", N);
     printf("Num levels %d\n", L);
-    printf("Num submatrices %lu\n", get_number_of_submatrices(Nn, s, L));
-    printf("Num blocks %lu\n", get_total_number_of_blocks(Nn, s, L));
+    printf("Num submatrices %lu\n", get_number_of_submatrices(L));
+    printf("Num blocks %lu\n", get_total_number_of_blocks(L));
     printf("Given max s %lu \n", maxs);
     printf("Computed s %lu \n", s);
     printf("Computed N %lu\n", Nn);
@@ -807,14 +720,14 @@ fmm_plan *create_fmm(size_t N, size_t maxs, size_t M, size_t direction,
   uint64_t t1 = tic;
   if (direction == BOTH)
   {
-    A[0] = (double *)fftw_malloc(get_number_of_submatrices(Nn, s, L) * M * M *
+    A[0] = (double *)fftw_malloc(get_number_of_submatrices(L) * M * M *
                                  sizeof(double));
-    A[1] = (double *)fftw_malloc(get_number_of_submatrices(Nn, s, L) * M * M *
+    A[1] = (double *)fftw_malloc(get_number_of_submatrices(L) * M * M *
                                  sizeof(double));
   }
   else
   {
-    A[direction] = (double *)fftw_malloc(get_number_of_submatrices(Nn, s, L) *
+    A[direction] = (double *)fftw_malloc(get_number_of_submatrices(L) *
                                          M * M * sizeof(double));
   }
 
@@ -878,22 +791,34 @@ fmm_plan *create_fmm(size_t N, size_t maxs, size_t M, size_t direction,
   vandermonde(T, s, M);
   fmmplan->T = T;
 
+  // Exact numbers for M=18
+  double CM[324] = {1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-0.5,0.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-0.25,-1.0,0.25,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.25,0.375,-0.75,0.125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.1875,0.5,0.75,-0.5,0.0625,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-0.1875,-0.3125,0.0,0.78125,-0.3125,0.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-0.15625,-0.375,-0.515625,-0.4375,0.65625,-0.1875,0.015625,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.15625,0.2734375,0.109375,-0.2734375,-0.65625,0.4921875,-0.109375,0.0078125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.13671875,0.3125,0.40625,0.4375,0.109375,-0.6875,0.34375,-0.0625,0.00390625,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-0.13671875,-0.24609375,-0.140625,0.09375,0.421875,0.421875,-0.609375,0.228515625,-0.03515625,0.001953125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-0.123046875,-0.2734375,-0.341796875,-0.390625,-0.2734375,0.171875,0.5908203125,-0.48828125,0.146484375,-0.01953125,0.0009765625,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.123046875,0.2255859375,0.150390625,-0.0107421875,-0.2578125,-0.43505859375,-0.1396484375,0.62841796875,-0.365234375,0.09130859375,-0.0107421875,0.00048828125,0.0,0.0,0.0,0.0,0.0,0.0,0.11279296875,0.24609375,0.298828125,0.34765625,0.308349609375,0.064453125,-0.3544921875,-0.392578125,0.57861328125,-0.259765625,0.0556640625,-0.005859375,0.000244140625,0.0,0.0,0.0,0.0,0.0,-0.11279296875,-0.20947265625,-0.15234375,-0.0333251953125,0.155517578125,0.3475341796875,0.330078125,-0.123779296875,-0.53955078125,0.485595703125,-0.177734375,0.0333251953125,-0.003173828125,0.0001220703125,0.0,0.0,0.0,0.0,-0.104736328125,-0.2255859375,-0.26788330078125,-0.312744140625,-0.3067626953125,-0.169189453125,0.13629150390625,0.41162109375,0.141845703125,-0.58447265625,0.38153076171875,-0.117919921875,0.0196533203125,-0.001708984375,6.103515625e-05,0.0,0.0,0.0,0.104736328125,0.196380615234375,0.15106201171875,0.058746337890625,-0.0897216796875,-0.263580322265625,-0.34515380859375,-0.148773193359375,0.311279296875,0.360565185546875,-0.55499267578125,0.285186767578125,-0.0762939453125,0.011444091796875,-0.00091552734375,3.0517578125e-05,0.0,0.0,0.0981903076171875,0.20947265625,0.244384765625,0.28466796875,0.2940673828125,0.21533203125,0.002685546875,-0.27978515625,-0.34722900390625,0.10205078125,0.496337890625,-0.48291015625,0.2049560546875,-0.04833984375,0.006591796875,-0.00048828125,1.52587890625e-05,0.0,-0.0981903076171875,-0.1854705810546875,-0.14837646484375,-0.074188232421875,0.045654296875,0.196624755859375,0.31024169921875,0.25628662109375,-0.05291748046875,-0.3880615234375,-0.13177490234375,0.548370361328125,-0.394287109375,0.142669677734375,-0.03009033203125,0.00376129150390625,-0.0002593994140625,7.62939453125e-06};
+
   double *Th = (double *)fftw_malloc(2 * M * M * sizeof(double));
   double *ThT = (double *)fftw_malloc(2 * M * M * sizeof(double));
   double *th = &Th[0];
   for (size_t q = 0; q < 2; q++)
   {
-    for (size_t k = 0; k < M; k++)
-    {
-      for (size_t j = 0; j < M; j++)
+    if (M == 18) {
+      for (size_t k = 0; k < M; k++)
       {
-        fun[j] = cos(k * acos((xj[j] + 2 * q - 1) / 2));
-        fun_hat[j] = 0.0;
+        for (size_t j = 0; j < M; j++)
+          *th++ = CM[k*M+j];
       }
-      fftw_execute(plan1d);
-      *th++ = fun_hat[0] / M / 2;
-      for (size_t j = 1; j < M; j++)
-        *th++ = fun_hat[j] / M;
+    }
+    else{
+      for (size_t k = 0; k < M; k++)
+      {
+        for (size_t j = 0; j < M; j++)
+        {
+          fun[j] = cos(k * acos((xj[j] + 2 * q - 1) / 2));
+          fun_hat[j] = 0.0;
+        }
+        fftw_execute(plan1d);
+        *th++ = fun_hat[0] / M / 2;
+        for (size_t j = 1; j < M; j++)
+          *th++ = fun_hat[j] / M;
+      }
     }
   }
   for (size_t q = 0; q < 2; q++)
@@ -914,7 +839,7 @@ fmm_plan *create_fmm(size_t N, size_t maxs, size_t M, size_t direction,
   double *work = (double *)malloc(2 * M * sizeof(double));
   double **wk = (double **)malloc(L * sizeof(double *));
   double **ck = (double **)malloc(L * sizeof(double *));
-  size_t Nb = get_total_number_of_blocks(Nn, s, L);
+  size_t Nb = get_total_number_of_blocks(L);
   wk[0] = (double *)malloc(Nb * 2 * M * sizeof(double));
   ck[0] = (double *)malloc(Nb * 2 * M * sizeof(double));
   for (size_t level = 1; level < L; level++)
@@ -1070,7 +995,7 @@ size_t execute(const double *input_array, double *output_array,
 
     double *w0 = &wk[0][0];
     double *c0 = &ck[0][0];
-    for (size_t i = 0; i < 2 * M * get_total_number_of_blocks(Nn, s, L); i++)
+    for (size_t i = 0; i < 2 * M * get_total_number_of_blocks(L); i++)
     {
       (*w0++) = 0.0;
       (*c0++) = 0.0;
@@ -1115,7 +1040,7 @@ size_t execute(const double *input_array, double *output_array,
     size_t MM = M * M;
     size_t K = get_number_of_blocks(L - 1) * 2;
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, K, M, s, 1.0,
-                &ia[2 * s], s, &T[odd * s * M], M, 0.0, wk[L - 1], M);
+                &ia[2 * s], s, &T[odd * s * M], M, 0, wk[L - 1], M);
     flops += 2 * K * s * M;
 
     for (size_t level = L; level-- > 1;)
@@ -1133,6 +1058,7 @@ size_t execute(const double *input_array, double *output_array,
       }
     }
 
+
     size_t ik = 0;
     for (size_t level = 0; level < L; level++)
     {
@@ -1141,21 +1067,20 @@ size_t execute(const double *input_array, double *output_array,
         size_t Nd = block * 2 * M;
         double *cp = &ck[level][Nd];
         double *wq = &wk[level][Nd];
-        // for (size_t q = 0; q < 2; q++) {
-        //   for (size_t p = 0; p < q + 1; p++) {
-        //     cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &A[ik * MM],
-        //                 M, &wq[q * M], 1, 1, &cp[p * M], 1);
-        //     //matvec(&A[ik * MM], &wq[q * M], &cp[p * M], M, M, 0);
-        //     flops += 2 * MM;
-        //     ik++;
-        //   }
-        // }
+        /*for (size_t q = 0; q < 2; q++) {
+          for (size_t p = 0; p < q + 1; p++) {
+            cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &A[ik * MM],
+                        M, &wq[q * M], 1, 1, &cp[p * M], 1);
+            flops += 2 * MM;
+            ik++;
+          }
+        }*/
         cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &A[ik * MM], M, wq, 1,
-                    1, cp, 1);
+                    0, cp, 1);
         cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &A[(ik + 1) * MM], M,
                     &wq[M], 1, 1, cp, 1);
         cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &A[(ik + 2) * MM], M,
-                    &wq[M], 1, 1, &cp[M], 1);
+                    &wq[M], 1, 0, &cp[M], 1);
         flops += 6 * MM;
         ik += 3;
       }
@@ -1170,14 +1095,11 @@ size_t execute(const double *input_array, double *output_array,
       {
         matvectriZ(&ThT[0], &c0[block * M], &c1[block * 2 * M], NULL, M, M, M,
                    true);
-        flops += (3 * MM) / 2;
+        flops += MM;
       }
     }
-    // size_t K = get_number_of_blocks(L - 1) * 2;
-    // cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, K, s, M, 1.0,
-    //             ck[L - 1], M, &TT[odd * s * M], s, 0.0, &oa[0], s);
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans, K, s, M, 1.0,
-                ck[L - 1], M, &T[odd * s * M], M, 0.0, &oa[0], s);
+                ck[L - 1], M, &T[odd * s * M], M, 0, &oa[0], s);
 
     flops += 2 * K * s * M;
     double *oaa = &output_array[odd * stride];
@@ -1212,6 +1134,7 @@ size_t execute(const double *input_array, double *output_array,
     flops += directL(input, output_array, fmmplan, stride);
     break;
   }
+
 
   if (input != NULL)
     free(input);
