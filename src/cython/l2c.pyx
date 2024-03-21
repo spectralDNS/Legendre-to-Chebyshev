@@ -52,11 +52,11 @@ cdef class Leg2Cheb:
 
     def __cinit__(self, input_array : np.ndarray, output_array : np.ndarray,
                   M : size_t=18, maxs : size_t=36, direction : size_t=BOTH,
-                  verbose : size_t=1):
+                  lagrange : size_t=0, verbose : size_t=1):
         self.N = input_array.shape[0]
         self.direction = direction
         self.verbose = verbose
-        self.plan = <l2c.fmm_plan*>l2c.create_fmm(self.N, maxs, M, direction, verbose)
+        self.plan = <l2c.fmm_plan*>l2c.create_fmm(self.N, maxs, M, direction, lagrange, verbose)
         self._input_array = input_array
         self._output_array = output_array
 
@@ -79,7 +79,7 @@ cdef class Leg2Cheb:
             1 - Chebyshev to Legendre
 
         """
-        assert direction in (0, 1), "Pleas specify direction of transform!"
+        assert direction in (0, 1), "Please specify direction of transform!"
 
         if input_array is not None:
             self._input_array[:] = input_array

@@ -21,6 +21,7 @@ class fmm_plan(Structure):
                   ("Nn", c_size_t),
                   ("L", c_size_t),
                   ("s", c_size_t),
+                  ("lagrange", c_size_t),
                   ("A", doublepp),
                   ("T", doublep),
                   ("Th", doublep),
@@ -34,7 +35,7 @@ class fmm_plan(Structure):
 
 create_fmm = C.create_fmm
 create_fmm.restype = POINTER(fmm_plan)
-create_fmm.argtypes = [c_size_t, c_size_t, c_size_t, c_size_t, c_size_t]
+create_fmm.argtypes = [c_size_t, c_size_t, c_size_t, c_size_t, c_size_t, c_size_t]
 execute = C.execute
 execute.argtypes = [c_void_p, c_void_p, POINTER(fmm_plan), c_size_t, c_size_t]
 create_direct = C.create_direct
@@ -70,9 +71,9 @@ class Leg2Cheb:
         Verbosity level
     """
     def __init__(self, input_array, output_array, maxs : int=36,
-                 M : int=18, direction : int=2, verbose : int=1):
+                 M : int=18, direction : int=2, lagrange : int=0, verbose : int=1):
         self.N = input_array.shape[0]
-        self.plan = create_fmm(self.N, maxs, M, direction, verbose)
+        self.plan = create_fmm(self.N, maxs, M, direction, lagrange, verbose)
         self._input_array = input_array
         self._output_array = output_array
         self._input_ctypes = input_array.ctypes

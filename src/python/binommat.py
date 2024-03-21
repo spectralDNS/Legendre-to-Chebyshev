@@ -36,3 +36,27 @@ def BM(n):
     A0 = A(n-1, sp.S.Half, -sp.S.Half)
     A1 = A(n-1, sp.S.Half, sp.S.Half)
     return np.vstack((W0 @ A0 @ W1, W0 @ A1 @ W1)).reshape((2, n, n))
+
+def CMtril(n):
+    C = BM(n)
+    D = np.zeros(n*n+n, dtype=object)
+    k = 0
+    for i in range(n):
+        for j in range(i+1):
+            D[k] = C[0, i, j]
+            D[k+(n*n+n)//2] = C[1, i, j]
+            k += 1
+    return D
+
+def CMtriu(n):
+    C = BM(n)
+    C0T = C[0].transpose()
+    C1T = C[1].transpose()
+    D = np.zeros(n*n+n, dtype=object)
+    k = 0
+    for i in range(n):
+        for j in range(i, n):
+            D[k] = C0T[i, j]
+            D[k+(n*n+n)//2] = C1T[i, j]
+            k += 1
+    return D

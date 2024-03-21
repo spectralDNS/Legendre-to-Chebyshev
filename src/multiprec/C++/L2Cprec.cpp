@@ -101,7 +101,7 @@ double test_accuracy_C(size_t N, size_t m, size_t direction, size_t norm, size_t
     break;
   }
 
-  fmm_plan *fmmplan = create_fmm(N, 64, 18, direction, 1);
+  fmm_plan *fmmplan = create_fmm(N, 64, 18, direction, 0, 1);
   double *input_array = (double *)calloc(N, sizeof(double));
   double *output_array = (double *)calloc(N, sizeof(double));
   for (size_t i = 0; i < N; i++)

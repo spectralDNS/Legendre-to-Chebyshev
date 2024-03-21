@@ -38,8 +38,8 @@ class Leg2Cheb:
 
         xj = np.cos((np.arange(M)+0.5)*np.pi/M)
         if not lagrange:
-            xj = np.cos((np.arange(2*M)+0.5)*np.pi/(2*M))
-            dct = fftw.dctn(np.zeros((2*M, 2*M)), axes=(0, 1), type=2)
+            xj = np.cos((np.arange(M)+0.5)*np.pi/M)
+            dct = fftw.dctn(np.zeros((M, M)), axes=(0, 1), type=2)
         for lv in range(L):
             self.A.append([])
             h = self.s*self.h[lv]
@@ -53,7 +53,7 @@ class Leg2Cheb:
                         x = (i0+p*2*h+(xj+1)*h)[:, None]
                         A_hat = self.fun(x, y)
                         if not lagrange:
-                            A_hat = (dct(A_hat)/(2*M)**2)[:M, :M]
+                            A_hat = (dct(A_hat)/M**2)[:M, :M]
                             A_hat[0] /= 2
                             A_hat[:, 0] /= 2
                         self.A[-1].append(A_hat.copy())
@@ -153,6 +153,7 @@ class Cheb2Leg(Leg2Cheb):
     def __call__(self, input_array, lagrange=None, binom=True):
         lagrange = self.lagrange if lagrange is None else lagrange
         self.assemble(lagrange, binom)
+        M = len(input_array)
         input_array.resize(self.N, refcheck=False)
         output_array = np.zeros_like(input_array)
         w0 = input_array.copy()
@@ -163,14 +164,14 @@ class Cheb2Leg(Leg2Cheb):
         self.direct(output_array, w0, self.a, self.dn, 2*self.s,
                     self.nb[self.L], self.N)
         output_array *= (np.arange(self.N)+0.5)
-        return output_array[:len(input_array)].copy()
+        return output_array[:M].copy()
 
 
 if __name__ == '__main__':
-    N = 2**10
-    #u = np.ones(N)
+    N = 512
+    u = np.ones(N)
     #u = np.random.rand(N)
-    u = 1/(np.arange(N)+1)
+    #u = 1/(np.arange(N)+1)
     binom = False
     L2C = Leg2Cheb(u, M=18)
     C2L = Cheb2Leg(u, M=18)

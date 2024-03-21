@@ -33,7 +33,7 @@ def cheb2legmp(u, b, N):
         b[n] *= (n+mp.mpf('1/2'))
 
 if __name__ == '__main__':
-    N = 11
+    N = 256
     u = mp.matrix([mp.mpf('1')]*N)
     b = mp.matrix([mp.mpf('0')]*N)
     c = mp.matrix([mp.mpf('0')]*N)

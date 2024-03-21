@@ -37,8 +37,8 @@ cdef extern from "../C/leg2cheb.h":
 
     cdef void free_fmm(fmm_plan)
     cdef void free_direct(direct_plan)
-    cdef fmm_plan create_fmm(size_t, size_t, size_t, size_t, size_t)
-    cdef fmm_plan_2d create_fmm_2d(size_t, size_t, int, size_t, size_t, size_t, size_t)
+    cdef fmm_plan create_fmm(size_t, size_t, size_t, size_t, size_t, size_t)
+    cdef fmm_plan_2d create_fmm_2d(size_t, size_t, int, size_t, size_t, size_t, size_t, size_t)
     cdef direct_plan create_direct(size_t, size_t)
     cdef size_t execute(const double*, double*, fmm_plan*, size_t, const size_t)
     cdef double Lambda(const double)

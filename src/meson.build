@@ -2,7 +2,8 @@ project('leg2cheb', 'c', 'cython', 'cpp',
         version : '1.0',
         default_options : [
           'buildtype=release',
-          'warning_level=1'])
+          'warning_level=1',
+          'optimization=3'])
 
 cy = meson.get_compiler('cython')
 cpp = meson.get_compiler('cpp')
@@ -15,11 +16,13 @@ deps = [cblas, fftw, omp]
 #add_global_arguments(['-march=native'], language : 'c')
 add_global_arguments(['-fomit-frame-pointer'], language : 'c')
 add_global_link_arguments(['-lm'], language : 'c')
-add_global_arguments('-std=c++11', language : 'cpp')
+#add_global_link_arguments(['-framework', 'Accelerate'], language : 'c')
+add_global_arguments('-std=c++14', language : 'cpp')
 if omp.found()
   add_global_arguments(['-DOMP'], language : 'c')
 endif
 
+#subdir('simd')
 subdir('C')
 subdir('cython')
 subdir('ctypes')
