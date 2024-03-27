@@ -13,7 +13,7 @@ cblas = dependency('openblas')
 fftw = dependency('fftw3')
 omp = dependency('openmp', required : false)
 deps = [cblas, fftw, omp]
-#add_global_arguments(['-march=native'], language : 'c')
+add_global_arguments(['-march=native'], language : 'c')
 add_global_arguments(['-fomit-frame-pointer'], language : 'c')
 add_global_link_arguments(['-lm'], language : 'c')
 #add_global_link_arguments(['-framework', 'Accelerate'], language : 'c')

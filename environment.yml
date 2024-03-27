@@ -9,8 +9,8 @@ dependencies:
   - numpy
   - numba
   - cython
-  - fftw
-  - mpi4py-fft
+  #- fftw
+  #- mpi4py-fft
   - openblas
   - meson
   - ninja

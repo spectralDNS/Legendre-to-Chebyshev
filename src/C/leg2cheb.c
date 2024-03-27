@@ -63,33 +63,86 @@ double _LambdaE(const double z) {
 
 double _Lambda(const double z) {
   double z2, zz, y, s;
-  double zp = z + 0.25;
+  const double zp = z + 0.25;
   z2 = zp * zp;
   s = sqrt(zp);
   y = 1 - 0.015625 / z2;
   if (z > 800)
-    return y / s;
+    goto scalereturn;
   zz = z2 * z2;
   y += 0.0025634765625 / zz;
   if (z > 90)
-    return y / s;
+    goto scalereturn;
   zz *= z2;
   y -= 0.0012798309326171875 / zz;
   if (z > 32)
-    return y / s;
+    goto scalereturn;
   zz *= z2;
   y += 0.0013435110449790955 / zz;
   if (z > 17)
-    return y / s;
+    goto scalereturn;
   zz *= z2;
   y -= 0.0024328966392204165 / zz;
   if (z > 12)
-    return y / s;
+    goto scalereturn;
   zz *= z2;
   y += 0.006754237533641572 / zz;
   if (z > 10)
-    return y / s;
+    goto scalereturn;
   return _Lambda0(z);
+scalereturn:
+  return y / s;
+}
+
+void _Lambdavec(const double *z, double *y, size_t N) {
+  double *z2 = (double *)fftw_malloc(N * sizeof(double));
+  double *z4 = (double *)fftw_malloc(N * sizeof(double));
+  double *z6 = (double *)fftw_malloc(N * sizeof(double));
+  double *zp = (double *)fftw_malloc(N * sizeof(double));
+  double *s = (double *)fftw_malloc(N * sizeof(double));
+  double minz = 1e8;
+  for (size_t i = 0; i < N; i++) {
+    zp[i] = z[i] + 0.25;
+    z2[i] = zp[i] * zp[i];
+    s[i] = sqrt(zp[i]);
+    minz = z[i] < minz ? z[i] : minz;
+  }
+  for (size_t i = 0; i < N; i++) {
+    y[i] = 1 - 0.015625 / z2[i];
+  }
+  if (minz > 800)
+    goto scaleandreturn;
+  for (size_t i = 0; i < N; i++) {
+    z4[i] = z2[i] * z2[i];
+    y[i] += 0.0025634765625 / z4[i];
+  }
+  if (minz > 90)
+    goto scaleandreturn;
+  for (size_t i = 0; i < N; i++) {
+    z6[i] = z4[i] * z2[i];
+    y[i] -= 0.0012798309326171875 / z6[i];
+  }
+  if (minz > 32)
+    goto scaleandreturn;
+  for (size_t i = 0; i < N; i++) {
+    y[i] += 0.0013435110449790955 / (z4[i] * z4[i]);
+  }
+  if (minz > 17)
+    goto scaleandreturn;
+  for (size_t i = 0; i < N; i++) {
+    y[i] -= 0.0024328966392204165 / (z6[i] * z4[i]);
+  }
+
+scaleandreturn:
+  for (size_t i = 0; i < N; i++)
+    y[i] /= s[i];
+
+  fftw_free(s);
+  fftw_free(z2);
+  fftw_free(z4);
+  fftw_free(z6);
+  fftw_free(zp);
+  return;
 }
 
 const double LamInt[64] = {
@@ -124,7 +177,7 @@ double _LambdaI(const size_t z) {
 }
 
 // Row major DCT II matrix of shape 18 x 18
-const double DCTII[324] = {
+const double DCTII[324] __attribute__((aligned)) = {
     5.5555555555555552e-02,  5.5555555555555552e-02,  5.5555555555555552e-02,
     5.5555555555555552e-02,  5.5555555555555552e-02,  5.5555555555555552e-02,
     5.5555555555555552e-02,  5.5555555555555552e-02,  5.5555555555555552e-02,
@@ -234,8 +287,137 @@ const double DCTII[324] = {
     9.1016893809888269e-02,  -7.8567420131838428e-02, 6.3730715150116024e-02,
     -4.6957584637855980e-02, 2.8757671678057626e-02,  -9.6839714164070143e-03};
 
+const double DCTIIH[162] __attribute__((aligned)) = {
+    1.1111111111111110e-01,  1.1111111111111110e-01,  1.1111111111111110e-01,
+    1.1111111111111110e-01,  1.1111111111111110e-01,  1.1111111111111110e-01,
+    1.1111111111111110e-01,  1.1111111111111110e-01,  1.1111111111111110e-01,
+    1.1068829978797172e-01,  1.0732509180989648e-01,  1.0070086522629444e-01,
+    9.1016893809887978e-02,  7.8567420131838608e-02,  6.3730715150116232e-02,
+    4.6957584637855494e-02,  2.8757671678057862e-02,  9.6839714164064644e-03,
+    1.0942308366802311e-01,  9.6225044864937631e-02,  7.1420845520726597e-02,
+    3.8002238147296523e-02,  0.0000000000000000e+00,  -3.8002238147296523e-02,
+    -7.1420845520726597e-02, -9.6225044864937631e-02, -1.0942308366802311e-01,
+    1.0732509180989648e-01,  7.8567420131838608e-02,  2.8757671678057862e-02,
+    -2.8757671678057862e-02, -7.8567420131838608e-02, -1.0732509180989648e-01,
+    -1.0732509180989648e-01, -7.8567420131838608e-02, -2.8757671678057862e-02,
+    1.0441029119843427e-01,  5.5555555555555552e-02,  -1.9294241962992262e-02,
+    -8.5116049235441998e-02, -1.1111111111111110e-01, -8.5116049235441998e-02,
+    -1.9294241962992262e-02, 5.5555555555555552e-02,  1.0441029119843427e-01,
+    1.0070086522629444e-01,  2.8757671678057862e-02,  -6.3730715150116232e-02,
+    -1.1068829978797172e-01, -7.8567420131838608e-02, 9.6839714164064644e-03,
+    9.1016893809887978e-02,  1.0732509180989648e-01,  4.6957584637855494e-02,
+    9.6225044864937631e-02,  0.0000000000000000e+00,  -9.6225044864937631e-02,
+    -9.6225044864937631e-02, 0.0000000000000000e+00,  9.6225044864937631e-02,
+    9.6225044864937631e-02,  0.0000000000000000e+00,  -9.6225044864937631e-02,
+    9.1016893809887978e-02,  -2.8757671678057862e-02, -1.1068829978797172e-01,
+    -4.6957584637855494e-02, 7.8567420131838608e-02,  1.0070086522629444e-01,
+    -9.6839714164064644e-03, -1.0732509180989648e-01, -6.3730715150116232e-02,
+    8.5116049235441998e-02,  -5.5555555555555552e-02, -1.0441029119843427e-01,
+    1.9294241962992262e-02,  1.1111111111111110e-01,  1.9294241962992262e-02,
+    -1.0441029119843427e-01, -5.5555555555555552e-02, 8.5116049235441998e-02,
+    7.8567420131838608e-02,  -7.8567420131838608e-02, -7.8567420131838608e-02,
+    7.8567420131838608e-02,  7.8567420131838608e-02,  -7.8567420131838608e-02,
+    -7.8567420131838608e-02, 7.8567420131838608e-02,  7.8567420131838608e-02,
+    7.1420845520726597e-02,  -9.6225044864937631e-02, -3.8002238147296523e-02,
+    1.0942308366802311e-01,  0.0000000000000000e+00,  -1.0942308366802311e-01,
+    3.8002238147296523e-02,  9.6225044864937631e-02,  -7.1420845520726597e-02,
+    6.3730715150116232e-02,  -1.0732509180989648e-01, 9.6839714164064644e-03,
+    1.0070086522629444e-01,  -7.8567420131838608e-02, -4.6957584637855494e-02,
+    1.1068829978797172e-01,  -2.8757671678057862e-02, -9.1016893809887978e-02,
+    5.5555555555555552e-02,  -1.1111111111111110e-01, 5.5555555555555552e-02,
+    5.5555555555555552e-02,  -1.1111111111111110e-01, 5.5555555555555552e-02,
+    5.5555555555555552e-02,  -1.1111111111111110e-01, 5.5555555555555552e-02,
+    4.6957584637855494e-02,  -1.0732509180989648e-01, 9.1016893809887978e-02,
+    -9.6839714164064644e-03, -7.8567420131838608e-02, 1.1068829978797172e-01,
+    -6.3730715150116232e-02, -2.8757671678057862e-02, 1.0070086522629444e-01,
+    3.8002238147296523e-02,  -9.6225044864937631e-02, 1.0942308366802311e-01,
+    -7.1420845520726597e-02, 0.0000000000000000e+00,  7.1420845520726597e-02,
+    -1.0942308366802311e-01, 9.6225044864937631e-02,  -3.8002238147296523e-02,
+    2.8757671678057862e-02,  -7.8567420131838608e-02, 1.0732509180989648e-01,
+    -1.0732509180989648e-01, 7.8567420131838608e-02,  -2.8757671678057862e-02,
+    -2.8757671678057862e-02, 7.8567420131838608e-02,  -1.0732509180989648e-01,
+    1.9294241962992262e-02,  -5.5555555555555552e-02, 8.5116049235441998e-02,
+    -1.0441029119843427e-01, 1.1111111111111110e-01,  -1.0441029119843427e-01,
+    8.5116049235441998e-02,  -5.5555555555555552e-02, 1.9294241962992262e-02,
+    9.6839714164064644e-03,  -2.8757671678057862e-02, 4.6957584637855494e-02,
+    -6.3730715150116232e-02, 7.8567420131838608e-02,  -9.1016893809887978e-02,
+    1.0070086522629444e-01,  -1.0732509180989648e-01, 1.1068829978797172e-01};
+const double DCTIIH0[81] __attribute__((aligned)) = {
+    1.1111111111111110e-01,  1.1111111111111110e-01,  1.1111111111111110e-01,
+    1.1111111111111110e-01,  1.1111111111111110e-01,  1.1111111111111110e-01,
+    1.1111111111111110e-01,  1.1111111111111110e-01,  1.1111111111111110e-01,
+    1.0942308366802311e-01,  9.6225044864937631e-02,  7.1420845520726597e-02,
+    3.8002238147296523e-02,  0.0000000000000000e+00,  -3.8002238147296523e-02,
+    -7.1420845520726597e-02, -9.6225044864937631e-02, -1.0942308366802311e-01,
+    1.0441029119843427e-01,  5.5555555555555552e-02,  -1.9294241962992262e-02,
+    -8.5116049235441998e-02, -1.1111111111111110e-01, -8.5116049235441998e-02,
+    -1.9294241962992262e-02, 5.5555555555555552e-02,  1.0441029119843427e-01,
+    9.6225044864937631e-02,  0.0000000000000000e+00,  -9.6225044864937631e-02,
+    -9.6225044864937631e-02, 0.0000000000000000e+00,  9.6225044864937631e-02,
+    9.6225044864937631e-02,  0.0000000000000000e+00,  -9.6225044864937631e-02,
+    8.5116049235441998e-02,  -5.5555555555555552e-02, -1.0441029119843427e-01,
+    1.9294241962992262e-02,  1.1111111111111110e-01,  1.9294241962992262e-02,
+    -1.0441029119843427e-01, -5.5555555555555552e-02, 8.5116049235441998e-02,
+    7.1420845520726597e-02,  -9.6225044864937631e-02, -3.8002238147296523e-02,
+    1.0942308366802311e-01,  0.0000000000000000e+00,  -1.0942308366802311e-01,
+    3.8002238147296523e-02,  9.6225044864937631e-02,  -7.1420845520726597e-02,
+    5.5555555555555552e-02,  -1.1111111111111110e-01, 5.5555555555555552e-02,
+    5.5555555555555552e-02,  -1.1111111111111110e-01, 5.5555555555555552e-02,
+    5.5555555555555552e-02,  -1.1111111111111110e-01, 5.5555555555555552e-02,
+    3.8002238147296523e-02,  -9.6225044864937631e-02, 1.0942308366802311e-01,
+    -7.1420845520726597e-02, 0.0000000000000000e+00,  7.1420845520726597e-02,
+    -1.0942308366802311e-01, 9.6225044864937631e-02,  -3.8002238147296523e-02,
+    1.9294241962992262e-02,  -5.5555555555555552e-02, 8.5116049235441998e-02,
+    -1.0441029119843427e-01, 1.1111111111111110e-01,  -1.0441029119843427e-01,
+    8.5116049235441998e-02,  -5.5555555555555552e-02, 1.9294241962992262e-02};
+const double DCTIIH1[81] __attribute__((aligned)) = {
+    1.1068829978797172e-01,  1.0732509180989648e-01,  1.0070086522629444e-01,
+    9.1016893809887978e-02,  7.8567420131838608e-02,  6.3730715150116232e-02,
+    4.6957584637855494e-02,  2.8757671678057862e-02,  9.6839714164064644e-03,
+    1.0732509180989648e-01,  7.8567420131838608e-02,  2.8757671678057862e-02,
+    -2.8757671678057862e-02, -7.8567420131838608e-02, -1.0732509180989648e-01,
+    -1.0732509180989648e-01, -7.8567420131838608e-02, -2.8757671678057862e-02,
+    1.0070086522629444e-01,  2.8757671678057862e-02,  -6.3730715150116232e-02,
+    -1.1068829978797172e-01, -7.8567420131838608e-02, 9.6839714164064644e-03,
+    9.1016893809887978e-02,  1.0732509180989648e-01,  4.6957584637855494e-02,
+    9.1016893809887978e-02,  -2.8757671678057862e-02, -1.1068829978797172e-01,
+    -4.6957584637855494e-02, 7.8567420131838608e-02,  1.0070086522629444e-01,
+    -9.6839714164064644e-03, -1.0732509180989648e-01, -6.3730715150116232e-02,
+    7.8567420131838608e-02,  -7.8567420131838608e-02, -7.8567420131838608e-02,
+    7.8567420131838608e-02,  7.8567420131838608e-02,  -7.8567420131838608e-02,
+    -7.8567420131838608e-02, 7.8567420131838608e-02,  7.8567420131838608e-02,
+    6.3730715150116232e-02,  -1.0732509180989648e-01, 9.6839714164064644e-03,
+    1.0070086522629444e-01,  -7.8567420131838608e-02, -4.6957584637855494e-02,
+    1.1068829978797172e-01,  -2.8757671678057862e-02, -9.1016893809887978e-02,
+    4.6957584637855494e-02,  -1.0732509180989648e-01, 9.1016893809887978e-02,
+    -9.6839714164064644e-03, -7.8567420131838608e-02, 1.1068829978797172e-01,
+    -6.3730715150116232e-02, -2.8757671678057862e-02, 1.0070086522629444e-01,
+    2.8757671678057862e-02,  -7.8567420131838608e-02, 1.0732509180989648e-01,
+    -1.0732509180989648e-01, 7.8567420131838608e-02,  -2.8757671678057862e-02,
+    -2.8757671678057862e-02, 7.8567420131838608e-02,  -1.0732509180989648e-01,
+    9.6839714164064644e-03,  -2.8757671678057862e-02, 4.6957584637855494e-02,
+    -6.3730715150116232e-02, 7.8567420131838608e-02,  -9.1016893809887978e-02,
+    1.0070086522629444e-01,  -1.0732509180989648e-01, 1.1068829978797172e-01};
+const double DCTIIHH0[25] __attribute__((aligned)) = {
+    1.1111111111111110e-01,  1.1111111111111110e-01,  1.1111111111111110e-01,
+    1.1111111111111110e-01,  1.1111111111111110e-01,  1.0441029119843427e-01,
+    5.5555555555555552e-02,  -1.9294241962992262e-02, -8.5116049235441998e-02,
+    -1.1111111111111110e-01, 8.5116049235441998e-02,  -5.5555555555555552e-02,
+    -1.0441029119843427e-01, 1.9294241962992262e-02,  1.1111111111111110e-01,
+    5.5555555555555552e-02,  -1.1111111111111110e-01, 5.5555555555555552e-02,
+    5.5555555555555552e-02,  -1.1111111111111110e-01, 1.9294241962992262e-02,
+    -5.5555555555555552e-02, 8.5116049235441998e-02,  -1.0441029119843427e-01,
+    1.1111111111111110e-01};
+const double DCTIIHH1[16] __attribute__((aligned)) = {
+    1.0942308366802311e-01,  9.6225044864937631e-02,  7.1420845520726597e-02,
+    3.8002238147296523e-02,  9.6225044864937631e-02,  0.0000000000000000e+00,
+    -9.6225044864937631e-02, -9.6225044864937631e-02, 7.1420845520726597e-02,
+    -9.6225044864937631e-02, -3.8002238147296523e-02, 1.0942308366802311e-01,
+    3.8002238147296523e-02,  -9.6225044864937631e-02, 1.0942308366802311e-01,
+    -7.1420845520726597e-02};
+
 // Pact storage of lower triangular transform matrix. (18 x 18 + 18) / 2 items
-const double CM[171] = {
+const double CM[171] __attribute__((aligned)) = {
     1.0000000000000000e+00,  -5.0000000000000000e-01, 5.0000000000000000e-01,
     -2.5000000000000000e-01, -1.0000000000000000e+00, 2.5000000000000000e-01,
     2.5000000000000000e-01,  3.7500000000000000e-01,  -7.5000000000000000e-01,
@@ -295,7 +477,7 @@ const double CM[171] = {
     3.7612915039062500e-03,  -2.5939941406250000e-04, 7.6293945312500000e-06};
 
 // Transpose of CM
-const double CMT[171] = {
+const double CMT[171] __attribute__((aligned)) = {
     1.0000000000000000e+00,  -5.0000000000000000e-01, -2.5000000000000000e-01,
     2.5000000000000000e-01,  1.8750000000000000e-01,  -1.8750000000000000e-01,
     -1.5625000000000000e-01, 1.5625000000000000e-01,  1.3671875000000000e-01,
@@ -663,7 +845,7 @@ size_t directL(const double *input, double *output_array, fmm_plan *fmmplan,
 }
 
 void matvectri(const double *A, const double *x, double *b, double *w,
-                const size_t m, const bool upper) {
+               const size_t m, const bool upper) {
   // compact triangular matrix A
   size_t i, j;
   if (upper == false) {
@@ -695,7 +877,7 @@ void matvectri(const double *A, const double *x, double *b, double *w,
         b[i + 1] = s1;
       }
     } else {
-      for (i = 0; i < m-2; i = i + 2) {
+      for (i = 0; i < m - 2; i = i + 2) {
         zp[i] = x[i] + xp[i];
         zm[i] = x[i] - xp[i];
         zp[i + 1] = x[i + 1] - xp[i + 1];
@@ -705,7 +887,7 @@ void matvectri(const double *A, const double *x, double *b, double *w,
       zm[i] = x[i] - xp[i];
 
       const double *a0 = &A[0];
-      for (i = 0; i < m-2; i = i + 2) {
+      for (i = 0; i < m - 2; i = i + 2) {
         const double *a1 = a0 + i + 1;
         double s0 = (*a0++) * zp[0];
         double s1 = (*a1++) * zm[0];
@@ -732,9 +914,9 @@ void matvectri(const double *A, const double *x, double *b, double *w,
       double so = 0.0;
       for (j = i; j < m - 1; j = j + 2) {
         se += (*ap++) * x[j];
-        so += (*ap++) * x[j+1];
+        so += (*ap++) * x[j + 1];
       }
-      if ((i+m) % 2 == 1)
+      if ((i + m) % 2 == 1)
         se += (*ap++) * x[j];
       (*b++) += se + so;
       (*bp++) += se - so;
@@ -775,6 +957,13 @@ double sum(const double *a, const size_t N) {
   double x = 0;
   for (size_t i = 0; i < N; i++)
     x += a[i];
+  return x;
+}
+
+double norm(const double *a, const size_t N) {
+  double x = 0;
+  for (size_t i = 0; i < N; i++)
+    x += a[i] * a[i];
   return x;
 }
 
@@ -898,36 +1087,113 @@ direct_plan *create_direct(size_t N, size_t direction) {
 // Direct matrix-vector DCT of fixed size N=18 and precomputed matrix is
 // faster than FFTW
 void dct(double *input, double *output) {
-  const size_t N = 18;
-  cblas_dgemv(CblasRowMajor, CblasNoTrans, N, N, 1, &DCTII[0], N, &input[0], 1,
-              0, &output[0], 1);
+  cblas_dgemv(CblasRowMajor, CblasNoTrans, 18, 18, 1, DCTII, 18, input, 1, 0,
+              output, 1);
+}
+
+void dctH2(double *input, double *output) {
+  double *tmp = (double *)fftw_malloc(324 * sizeof(double));
+  double *z = (double *)fftw_malloc(9 * sizeof(double));
+  double *zpm = (double *)fftw_malloc(9 * sizeof(double));
+
+  for (size_t i = 0; i < 18; i++) {
+    dctH(input + i * 18, tmp + i * 18, 1, z, zpm);
+  }
+  for (size_t i = 0; i < 18; i++) {
+    dctH(tmp + i, output + i, 18, z, zpm);
+  }
+  fftw_free(tmp);
+  fftw_free(z);
+  fftw_free(zpm);
+}
+
+void dctH(double *input, double *output, size_t st, double *z, double *zpm) {
+  double out[18];
+  for (size_t i = 0; i < 9; i++) {
+    z[i] = input[i * st] + input[(17 - i) * st];
+  }
+  for (size_t i = 0; i < 4; i++) {
+    zpm[i] = z[i] + z[8 - i];
+    zpm[5 + i] = z[i] - z[8 - i];
+  }
+  zpm[4] = z[4];
+
+  // cblas_dgemv(CblasRowMajor, CblasNoTrans, 9, 9, 1, DCTIIH0, 9, z, 1, 0,
+  //             out, 2);
+  // cblas_dgemv(CblasRowMajor, CblasNoTrans, 5, 5, 1, DCTIIHH0, 5, zpm, 1, 0,
+  //            out, 4);
+  // cblas_dgemv(CblasRowMajor, CblasNoTrans, 4, 4, 1, DCTIIHH1, 4, zpm+5, 1, 0,
+  //            out+2, 4);
+
+  // vDSP_mmulD(DCTIIHH0, 1, zpm, 1, &out[0], 4, 5, 1, 5);
+  // vDSP_mmulD(DCTIIHH1, 1, zpm+5, 1, &out[2], 4, 4, 1, 4);
+  // printf("align: %zu %zu \n", __alignof__(DCTIIHH0), __alignof__(DCTIIHH1));
+
+  for (size_t i = 0; i < 5; i++) {
+    const double *t0 = &DCTIIHH0[i * 5];
+    out[4 * i] = t0[0] * zpm[0] + t0[1] * zpm[1] + t0[2] * zpm[2] +
+                 t0[3] * zpm[3] + t0[4] * zpm[4];
+  }
+  for (size_t i = 0; i < 4; i++) {
+    const double *t1 = &DCTIIHH1[i * 4];
+    out[2 + 4 * i] =
+        t1[0] * zpm[5] + t1[1] * zpm[6] + t1[2] * zpm[7] + t1[3] * zpm[8];
+  }
+
+  for (size_t i = 0; i < 9; i++) {
+    z[i] = input[i * st] - input[(17 - i) * st];
+  }
+
+  // cblas_dgemv(CblasRowMajor, CblasNoTrans, 9, 9, 1, DCTIIH1, 9, z, 1, 0,
+  //              out+1, 2);
+  // cblas_dsymv(CblasRowMajor, CblasLower, 9, 1, DCTIIH1, 9, z, 1, 0,
+  //              out+1, 2);
+  /*for (size_t i=0; i<9; i++)
+    output[st+2*st*i] = DCTIIH1[i*9+i]*z[i];
+  for (size_t i=0; i<9; i++) {
+    for (size_t j=i+1; j<9; j++) {
+      output[st+2*st*i] += DCTIIH1[i*9+j]*z[j];
+      output[st+2*st*j] += DCTIIH1[i*9+j]*z[i];
+    }
+  }*/
+  for (size_t i = 0; i < 9; i++) {
+    double s0 = 0;
+    for (size_t j = 0; j < 9; j++) {
+      s0 += DCTIIH1[i * 9 + j] * z[j];
+    }
+    out[1 + 2 * i] = s0;
+  }
+
+  for (size_t i = 0; i < 18; i++) {
+    output[i * st] = out[i];
+  }
+
+  output[0] /= 2;
 }
 
 void dct2(double *input, double *output) {
-  const size_t N = 18;
-  double *tmp = (double *)fftw_malloc(N * N * sizeof(double));
+  double tmp[324];
 
   // DCT along rows
-  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans, N, N, N, 1.0, &input[0],
-              N, &DCTII[0], N, 0, &tmp[0], N);
+  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans, 18, 18, 18, 1, input, 18,
+              DCTII, 18, 0, tmp, 18);
 
   // DCT along columns
-  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, N, N, N, 1.0,
-              &DCTII[0], N, &tmp[0], N, 0, &output[0], N);
-
-  fftw_free(tmp);
+  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 18, 18, 18, 1, DCTII,
+              18, tmp, 18, 0, output, 18);
 }
 
 fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
                      const size_t direction, size_t lagrange, const size_t v) {
-  fmm_plan *fmmplan = (fmm_plan *)fftw_malloc(sizeof(fmm_plan));
+  fmm_plan *fmmplan = (fmm_plan *)malloc(sizeof(fmm_plan));
   fftw_plan plan1d, plan;
   size_t Nn;
   size_t s;
   size_t ij[2];
   size_t directions[2];
   size_t num_directions = 2;
-  assert(maxs >= 32); // Because of implementation for _Lambda/_LambdaE. Easily adjusted for less, but there should be no need.
+  assert(maxs >= 32); // Because of implementation for _Lambda/_LambdaE. Easily
+                      // adjusted for less, but there should be no need.
   switch (direction) {
   case L2C:
     directions[0] = 0;
@@ -982,6 +1248,17 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
     printf("Computed s %lu \n", s);
     printf("Computed N %lu\n", Nn);
   }
+  double *fun = (double *)fftw_malloc(M * M * sizeof(double));
+  double *fun_hat = (double *)fftw_malloc(M * M * sizeof(double));
+  bool use_FFTW = (M != 18 && lagrange == 0);
+
+  if (use_FFTW) {
+    if (v > 1)
+      printf("using FFTW for planning\n");
+    plan1d = fftw_plan_r2r_1d(M, fun, fun_hat, FFTW_REDFT10, FFTW_PATIENT);
+    plan = fftw_plan_r2r_2d(M, M, fun, fun_hat, FFTW_REDFT10, FFTW_REDFT10,
+                            FFTW_PATIENT);
+  }
 
   const size_t MM = M * M;
   uint64_t t1 = tic;
@@ -996,28 +1273,27 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
   }
 
   double *xj = (double *)fftw_malloc(M * sizeof(double));
-  for (size_t i = 0; i < M; i++)
+  double *xjh = (double *)fftw_malloc(M * sizeof(double));
+  for (size_t i = 0; i < M; i++) {
     xj[i] = cos((i + 0.5) * M_PI / M);
-
-  double *fun = (double *)fftw_malloc(MM * sizeof(double));
-  double *fun_hat = (double *)fftw_malloc(MM * sizeof(double));
-  double *fx0 = (double *)fftw_malloc(2 * MM * sizeof(double));
-  double *fx1 = (double *)fftw_malloc(2 * MM * sizeof(double));
-  double *lx1 = (double *)fftw_malloc(2 * MM * sizeof(double));
-  double *ap0 = A[0];
-  double *ap1 = A[1];
-  bool use_FFTW = (M != 18 && lagrange == 0);
-
-  if (use_FFTW) {
-    if (v > 1)
-      printf("using FFTW for planning\n");
-    plan1d = fftw_plan_r2r_1d(M, fun, fun_hat, FFTW_REDFT10, FFTW_MEASURE);
-    plan = fftw_plan_r2r_2d(M, M, fun, fun_hat, FFTW_REDFT10, FFTW_REDFT10,
-                            FFTW_MEASURE);
   }
 
+  double *fx0 = (double *)fftw_malloc(2 * MM * sizeof(double));
+  double *fx1 = (double *)fftw_malloc(MM * sizeof(double));
+  double *lx1 = (double *)fftw_malloc(MM * sizeof(double));
+  double *zm = (double *)fftw_malloc((MM + M) / 2 * sizeof(double));
+  double *zp = (double *)fftw_malloc((MM + M) / 2 * sizeof(double));
+  double *lm = (double *)fftw_malloc((MM + M) / 2 * sizeof(double));
+  double *lp = (double *)fftw_malloc((MM + M) / 2 * sizeof(double));
+
+  uint64_t t00 = 0;
+  uint64_t t11 = 0;
+
+  size_t kk = 0;
   for (size_t level = 0; level < L; level++) {
     size_t h = s * get_h(level, L);
+    for (size_t k = 0; k < M; k++)
+      xjh[k] = xj[k] * h;
     for (size_t block = 0; block < get_number_of_blocks(level); block++) {
       get_ij(ij, level, block, s, L);
       for (size_t q = 0; q < 2; q++) {
@@ -1025,76 +1301,135 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
         for (size_t p = 0; p < q + 1; p++) {
           double x0 = 2 * (ij[0] + p * h) + h;
           for (size_t di = 0; di < num_directions; di++) {
-            size_t dir = directions[di];
+            const size_t dir = directions[di];
+            uint64_t r0 = tic;
+            // ff is input to the DCT
+            double *ff = (lagrange == 0) ? &fun[0] : &A[dir][kk * MM];
+            double *f00 = &fx0[q * MM];
+            double *fpq = &fx0[(q - p) * MM];
+
+            ///////
+            double *zmp = &zm[0];
+            double *zpp = &zp[0];
+            // Assemble arguments to Lambda
             for (size_t i = 0; i < M; i++) {
-              double x = x0 + xj[i] * h;
+              double x = x0 + xjh[i];
               for (size_t j = 0; j < M; j++) {
-                double y = y0 + xj[j] * h;
-                size_t ix = q * MM + i * M + j;
-                size_t xi = q * MM + j * M + i;
-                size_t qp = (q - p) * MM + i * M + j;
-                if (di == 0) {
-                  if (block == 0 && p == 0) {
-                    if (j < M - i) { // Persymmetric Lambda((y-x)/2)
-                      //double m0 = _Lambda((y - x) / 2);
-                      double m0 = _LambdaE((y - x) / 2);
-                      fx0[ix] = m0;
-                      fx0[q * MM + (M - j) * M - i - 1] = m0;
-                    }
+                double y = y0 + xjh[j];
+                if (di == 0 && block == 0 && p == 0) {
+                  if (j < M - i) { // Persymmetric Lambda((y-x)/2)
+                    (*zmp++) = (y - x) / 2;
+                  }
+                }
+                if (dir == L2C) {
+                  if (j >= i)
+                    (*zpp++) = (y + x) / 2; // Upper triangular
+                } else {
+                  if (j >= i)
+                    (*zpp++) = (y + x - 1) / 2;
+                }
+              }
+            }
+            // Execute Lambda only for required arguments of submatrix and
+            // distribute
+            if (block == 0 && p == 0 && di == 0) {
+              _Lambdavec(&zm[0], &lm[0], (MM + M) / 2);
+            }
+            _Lambdavec(&zp[0], &lp[0], (MM + M) / 2);
+            double *lmp = &lm[0];
+            double *lpp = &lp[0];
+
+            for (size_t i = 0; i < M; i++) {
+              double x = x0 + xjh[i];
+              for (size_t j = 0; j < M; j++) {
+                double y = y0 + xjh[j];
+                size_t ix = i * M + j;
+                size_t xi = j * M + i;
+                if (di == 0 && block == 0 && p == 0) {
+                  if (j < M - i) { // Persymmetric Lambda((y-x)/2)
+                    f00[ix] = (*lmp);
+                    f00[MM - xi - 1] = (*lmp++);
                   }
                 }
                 if (dir == L2C) {
                   if (j >= i) { // Symmetric Lambda((x+y)/2)
-                    //double m1 = _Lambda((x + y) / 2);
-                    double m1 = _LambdaE((x + y) / 2);
-                    fx1[ix] = m1;
-                    fx1[xi] = m1;
+                    fx1[ix] = (*lpp);
+                    fx1[xi] = (*lpp++);
                   }
-                  fun[i * M + j] = fx0[qp] * fx1[ix];
+                  (*ff++) = fpq[ix] * fx1[ix];
                 } else {
                   if (j >= i) {
-                    //double l1 = -_Lambda((x + y - 1) / 2) / (y + x + 1);
-                    double l1 = -_LambdaE((x + y - 1) / 2) / (y + x + 1);
+                    double l1 = -(*lpp++) / (x + y + 1);
                     lx1[ix] = l1;
                     lx1[xi] = l1;
                   }
-                  fun[i * M + j] = fx0[qp] * lx1[ix] / (y - x - 1);
+                  (*ff++) = fpq[ix] * lx1[ix] / (y - x - 1);
                 }
               }
             }
-            double *fh = NULL;
+
+            /*for (size_t i = 0; i < M; i++) {
+              double x = x0 + xjh[i];
+              for (size_t j = 0; j < M; j++) {
+                double y = y0 + xjh[j];
+                size_t ix = i * M + j;
+                size_t xi = j * M + i;
+                if (di == 0 && block == 0 && p == 0) {
+                  if (j < M - i) { // Persymmetric Lambda((y-x)/2)
+                    double m0 = _Lambda((y - x) / 2);
+                    // double m0 = _LambdaE((y - x) / 2);
+                    f00[ix] = m0;
+                    f00[MM - xi - 1] = m0;
+                  }
+                }
+                if (dir == L2C) {
+                  if (j >= i) { // Symmetric Lambda((x+y)/2)
+                    double m1 = _Lambda((x + y) / 2);
+                    // double m1 = _LambdaE((x + y) / 2);
+                    fx1[ix] = m1;
+                    fx1[xi] = m1;
+                  }
+                  (*ff++) = fpq[ix] * fx1[ix];
+                } else {
+                  if (j >= i) {
+                    double l1 = -_Lambda((x + y - 1) / 2) / (x + y + 1);
+                    // double l1 = -_LambdaE((x + y - 1) / 2) / (x + y + 1);
+                    lx1[ix] = l1;
+                    lx1[xi] = l1;
+                  }
+                  (*ff++) = fpq[ix] * lx1[ix] / (y - x - 1);
+                }
+              }
+            }*/
+
+            uint64_t r1 = tic;
+            t00 += r1 - r0;
             if (lagrange == 0) {
               if (use_FFTW) {
                 fftw_execute(plan);
                 for (size_t i = 0; i < M; i++) {
                   for (size_t j = 0; j < M; j++) {
-                    fun_hat[i * M + j] /= MM;
+                    fun_hat[i * M + j] /= (M * M);
                   }
                 }
-                for (size_t j = 0; j < M; j++)
-                  fun_hat[j] /= 2;
+                for (size_t i = 0; i < M; i++)
+                  fun_hat[i] /= 2;
                 for (size_t i = 0; i < M; i++)
                   fun_hat[i * M] /= 2;
+                memcpy(&A[dir][kk * MM], &fun_hat[0], MM * sizeof(double));
               } else {
-                dct2(&fun[0], &fun_hat[0]);
+                dct2(&fun[0], &A[dir][kk * MM]);
               }
-              fh = &fun_hat[0];
-            } else {
-              fh = &fun[0];
             }
-
-            if (dir == L2C) {
-              for (size_t i = 0; i < MM; i++)
-                *ap0++ = *fh++;
-            } else {
-              for (size_t i = 0; i < MM; i++)
-                *ap1++ = *fh++;
-            }
+            t11 += tic - r1;
           }
+          kk += 1;
         }
       }
     }
   }
+  printf("Time 0: %2.6e   Time 1: %2.6e\n", t00 / 1.0E9, t11 / 1.0E9);
+
   double *wj = NULL;
   if (lagrange == 1) {
     wj = (double *)fftw_malloc(M * sizeof(double));
@@ -1235,7 +1570,12 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
   fftw_free(fx0);
   fftw_free(fx1);
   fftw_free(lx1);
+  fftw_free(zm);
+  fftw_free(zp);
+  fftw_free(lm);
+  fftw_free(lp);
   fftw_free(xj);
+  fftw_free(xjh);
   if (lagrange == 1) {
     fftw_free(wj);
   }
@@ -1399,13 +1739,13 @@ size_t execute(const double *input_array, double *output_array,
         int q0 = (block - 1) % 2;
         if (lagrange == 0) {
           matvectri(&Th[0], wq, &w1[(b0 * 2 + q0) * M], fmmplan->work, M,
-                     false);
+                    false);
           flops += MM; //+2*M;
         } else {
           cblas_dgemv(CblasRowMajor, CblasTrans, M, M, 1, &Th[0], M, &wq[0], 1,
                       0, &w1[(b0 * 2 + q0) * M], 1);
           cblas_dgemv(CblasRowMajor, CblasTrans, M, M, 1, &Th[MM], M, &wq[M], 1,
-                      0, &w1[(b0 * 2 + q0) * M], 1);
+                      1, &w1[(b0 * 2 + q0) * M], 1);
 
           flops += 4 * MM;
         }
@@ -1443,8 +1783,7 @@ size_t execute(const double *input_array, double *output_array,
       for (size_t block = 0; block < get_number_of_blocks(level + 1) - 1;
            block++) {
         if (lagrange == 0) {
-          matvectri(&ThT[0], &c0[block * M], &c1[block * 2 * M], NULL, M,
-                     true);
+          matvectri(&ThT[0], &c0[block * M], &c1[block * 2 * M], NULL, M, true);
           flops += MM;
         } else {
           cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &Th[0], M,

@@ -95,6 +95,8 @@ size_t get_total_number_of_submatrices(const size_t L);
 void get_ij(size_t *ij, const size_t level, const size_t block, const size_t s,
             const size_t L);
 void dct(double *input, double *output);
+void dctH(double *input, double *output, size_t st, double *z, double *zpm);
 void dct2(double *input, double *output);
+void dctH2(double *input, double *output);
 
 #endif
