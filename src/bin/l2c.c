@@ -431,7 +431,7 @@ void test_dct(size_t N, size_t repeat) {
     fun[i] = i * i;
   }
   dct2(&fun[0], &fun_hat[0]);
-  dctH2(&fun[0], &fun_hat2[0]);
+  //dctH2(&fun[0], &fun_hat2[0]);
   double error = 0;
   for (size_t i = 0; i < M; i++) {
     error += fabs(fun_hat2[i] - fun_hat[i]);
@@ -443,7 +443,7 @@ void test_dct(size_t N, size_t repeat) {
   for (size_t i = 0; i < repeat; i++) {
     uint64_t g0 = tic;
     ///fftw_execute(plan);
-    dctH2(fun, fun_hat);
+    //dctH2(fun, fun_hat);
     double s1 = toc(g0);
     min_time = s1 < min_time ? s1 : min_time;
   }
@@ -518,6 +518,27 @@ void test_matvectriZ(size_t N, size_t repeat, size_t M, size_t lagrange,
   free(output_array);
   free_fmm(fmmplan);
 }
+
+void test_init(size_t N, size_t maxs, size_t repeat, size_t direction,
+               size_t M, size_t lagrange, size_t verbose) {
+  if (verbose > 1)
+    printf("test_init %lu\n", direction);
+
+  uint64_t t0 = tic;
+  double min_time = 1e8;
+  size_t flops;
+  for (size_t i = 0; i < repeat; i++) {
+    uint64_t g0 = tic;
+    fmm_plan *fmmplan = create_fmm(N, maxs, M, direction, lagrange, verbose);
+    double s1 = toc(g0);
+    min_time = s1 < min_time ? s1 : min_time;
+    free(fmmplan);
+  }
+  uint64_t t1 = tic;
+  printf("Timing init N %6lu avg / min = %2.4e / %2.4e \n", N,
+         dtics(t0, t1) / repeat, min_time);
+}
+
 
 int main(int argc, char *argv[]) {
   int opt;
@@ -629,6 +650,10 @@ int main(int argc, char *argv[]) {
 
   case 9:
     test_accuracy(N, maxs, M, lagrange, verbose);
+    break;
+
+  case 10:
+    test_init(N, maxs, repeat, L2C, M, lagrange, verbose);
     break;
 
   default:

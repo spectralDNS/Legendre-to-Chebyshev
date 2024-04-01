@@ -68,11 +68,12 @@ template <class T> void cheb2leg(T *u, T *b, size_t N) {
   free(un);
 }
 
-double test_accuracy_C(size_t N, size_t m, size_t direction, size_t norm, size_t random) {
+double test_accuracy_C(size_t N, size_t m, size_t direction, size_t norm, size_t random, size_t lagrange) {
 
   //typedef boost::multiprecision::cpp_dec_float_100 T;
   //typedef boost::multiprecision::cpp_dec_float_50 T;
   typedef cpp_dec_float_32 T;
+
   srand(time(NULL));   // Initialization, should only be called once.
   T *u = (T *)malloc(N * sizeof(T));
   T *b = (T *)calloc(N, sizeof(T));
@@ -85,10 +86,9 @@ double test_accuracy_C(size_t N, size_t m, size_t direction, size_t norm, size_t
 
   case 1:
     for (size_t i = 0; i < N; i++)
-      u[i] =  (T(rand()) / T(RAND_MAX)) / boost::multiprecision::pow(T(i + 1), m);
-      //u[i] =  (2 * T(rand()) / T(RAND_MAX) - 1) / boost::multiprecision::pow(T(i + 1), m);
+      //u[i] =  (T(rand()) / T(RAND_MAX)) / boost::multiprecision::pow(T(i + 1), m);
+      u[i] =  (2 * T(rand()) / T(RAND_MAX) - 1) / boost::multiprecision::pow(T(i + 1), m);
     break;
-
   }
 
   switch (direction) {
@@ -101,7 +101,7 @@ double test_accuracy_C(size_t N, size_t m, size_t direction, size_t norm, size_t
     break;
   }
 
-  fmm_plan *fmmplan = create_fmm(N, 64, 18, direction, 0, 1);
+  fmm_plan *fmmplan = create_fmm(N, 64, 18, direction, lagrange, 1);
   double *input_array = (double *)calloc(N, sizeof(double));
   double *output_array = (double *)calloc(N, sizeof(double));
   for (size_t i = 0; i < N; i++)
@@ -169,9 +169,10 @@ int main(int argc, char *argv[]) {
   size_t d = 0;
   size_t n = 0;
   size_t R = 0;
+  size_t l = 0;
   double m = 0.0;
   int opt;
-  while ((opt = getopt(argc, argv, ":N:m::a::d::n::R::")) != -1) {
+  while ((opt = getopt(argc, argv, ":N:m::a::d::n::R::l::")) != -1) {
     switch (opt) {
     case 'N':
       N = atoi(optarg);
@@ -191,6 +192,9 @@ int main(int argc, char *argv[]) {
     case 'R':
       R = atoi(optarg);
       break;
+    case 'l':
+      l = atoi(optarg);
+      break;
     default:
       exit(-1);
     }
@@ -202,7 +206,7 @@ int main(int argc, char *argv[]) {
     break;
 
   case 1:
-    test_accuracy_C(N, m, d, n, R);
+    test_accuracy_C(N, m, d, n, R, l);
     break;
 
   default:
