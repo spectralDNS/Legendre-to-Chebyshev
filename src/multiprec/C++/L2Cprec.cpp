@@ -68,13 +68,14 @@ template <class T> void cheb2leg(T *u, T *b, size_t N) {
   free(un);
 }
 
-double test_accuracy_C(size_t N, size_t m, size_t direction, size_t norm, size_t random, size_t lagrange) {
+double test_accuracy_C(size_t N, double m, size_t direction, size_t norm, size_t random, size_t lagrange) {
 
   //typedef boost::multiprecision::cpp_dec_float_100 T;
   //typedef boost::multiprecision::cpp_dec_float_50 T;
   typedef cpp_dec_float_32 T;
 
-  srand(time(NULL));   // Initialization, should only be called once.
+  //srand(time(NULL));   // Initialization, should only be called once.
+  srand(1);
   T *u = (T *)malloc(N * sizeof(T));
   T *b = (T *)calloc(N, sizeof(T));
   switch (random)
@@ -102,6 +103,7 @@ double test_accuracy_C(size_t N, size_t m, size_t direction, size_t norm, size_t
   }
 
   fmm_plan *fmmplan = create_fmm(N, 64, 18, direction, lagrange, 1);
+
   double *input_array = (double *)calloc(N, sizeof(double));
   double *output_array = (double *)calloc(N, sizeof(double));
   for (size_t i = 0; i < N; i++)
@@ -124,6 +126,7 @@ double test_accuracy_C(size_t N, size_t m, size_t direction, size_t norm, size_t
       for (size_t i = 0; i < N; i++)
         error = fmax(fabs(output_array[i] - (double)b[i]), error);
       double e0 = 0;
+
       for (size_t i = 0; i < N; i++)
         e0 = fmax(fabs(output_array[i]), e0);
       error /= e0;
@@ -135,7 +138,7 @@ double test_accuracy_C(size_t N, size_t m, size_t direction, size_t norm, size_t
   free(output_array);
   free(u);
   free(b);
-  std::cout << error << std::endl;
+  std::cout << std::setprecision(16) << error << std::endl;
 
   return error;
 }

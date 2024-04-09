@@ -5,6 +5,7 @@ from mpmath import mp
 import sympy as sp
 import numpy as np
 import scipy
+import math
 import matplotlib.pyplot as plt
 np.set_printoptions(precision=16, suppress=False)
 
@@ -32,25 +33,27 @@ def lamxf(x, nx=7):
     y += 0.006754237533641572/(x+0.25)**12
     return y/s
 
-def lamx(x, nx=7):
+def taux(x, nx=7):
     y = 1 - 1/64/(x+q)**2
-    s = mp.sqrt(x+q)
     if nx == 2:
-        return y/s
+        return y
     y += 21/8192/(x+q)**4
     if nx == 3:
-        return y/s
+        return y
     y -= 671/524288/(x+q)**6
     if nx == 4:
-        return y/s
+        return y
     y += 180323/134217728/(x+q)**8
     if nx == 5:
-        return y/s
+        return y
     y -= 20898423/8589934592/(x+q)**10
     if nx == 6:
-        return y/s
+        return y
     y += 7426362705/1099511627776/(x+q)**12
-    return y/s
+    return y
+
+def lamx(x, nx=7):
+    return taux(x, nx) / mp.sqrt(x+q)
 
 def lambN1(x):
     return np.exp(scipy.special.loggamma(x + 0.5) - scipy.special.loggamma(x+1)) * np.sqrt(x)
@@ -129,6 +132,10 @@ def lambG(x, a=64, nx=8):
     c = chebquad(10, a, nx, lambiG)
     return [chebval(2*(a/(i+q))**2-1, c) / mp.sqrt(i+q) for i in x]
 
+def lambGf(x, a=64, nx=8):
+    c = chebquad(10, a, nx, lambiG)
+    return [chebval(2*(a/(float(i)+0.25))**2-1, np.array(c).astype(np.double)) / np.sqrt(float(i)+0.25) for i in x]
+
 def fx(y, a, nx=8):
     e = [lamb(x) for x in y]
     f = lambC(y, a, nx)
@@ -136,8 +143,8 @@ def fx(y, a, nx=8):
 
 def fg(y, a, nx=8):
     e = [lamb(x) for x in y]
-    f = lambG(y, a, nx)
-    return [abs(f[i] - e[i]) for i in range(len(y))]
+    f = lambGf(y, a, nx)
+    return [abs((f[i] - e[i])/e[i]) for i in range(len(y))]
 
 dfx = lambda x, nx: float(lamx(x, nx) - lamb(x))
 dff = lambda x, nx: float(lamxf(float(x), nx) - lamb(x))
@@ -149,11 +156,14 @@ dff = lambda x, nx: float(lamxf(float(x), nx) - lamb(x))
 #for i in range(64):
 #    L.append(lamb(i))
 
-F = lambda x, nx: mp.log10(mp.absmax(lamx(x, nx)-lamb(x)))-mp.log10(mp.mpf('2.22e-16'))
-#mp.findroot(lambda x: F(x, 7), 10)
+F = lambda x, nx: mp.log10(mp.absmax(lamx(x, nx)-lamb(x)))-mp.log10(math.nextafter(lamxf(2000), 1e8)-lamxf(2000))
+#F = lambda x, nx: mp.log10(mp.absmax((lamx(x, nx)-lamb(x))/lamb(x)))-mp.log10(2.22e-16)
+#F = lambda x, nx: mp.log10(mp.absmax((lamx(x, nx)-lamb(x))))-mp.log10(2.22e-16)
 
-y = mp.linspace(400, 1000, 100)
+mp.findroot(lambda x: F(x, 4), 10)
+
+y = mp.linspace(64, 2000, 200)
 plt.semilogy(y, abs(np.array([dfx(i, 2) for i in y])), 'b',
              y, fx(y, 10, 6), 'r',
-             y, fg(y, 10, 6), 'k',
+             y, fg(y, 64, 3), 'k',
              y, abs(np.array([dff(i, 2) for i in y])), 'm')

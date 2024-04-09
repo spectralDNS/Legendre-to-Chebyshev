@@ -21,82 +21,85 @@ void __Lambda(const double *z, double *w, const size_t N) {
 
 double _Lambda0(const double z) { return exp(lgamma(z + 0.5) - lgamma(z + 1)); }
 
-inline static double _LambdaE10(const double z) {
-  const static double a0[6] = {9.9992197073403921e-01, -7.7997420312031631e-05,
-                               3.1806372211417961e-08, -3.9175710357440109e-11,
-                               1.0041660721179864e-13, -4.3833711744079551e-16};
+inline static double _LambdaE16(const double z) {
+  const static double a0[5] = {9.9996949706645188e-01, -3.0498055973040047e-05,
+                               4.8752082058744936e-09, -2.3645121623003757e-12,
+                               2.4013727207097398e-15};
   const double z0 = z + 0.25;
-  return chebval(-1 + 200 / pow(z0, 2), a0, 6) / sqrt(z0);
+  return chebval(-1 + 512 / pow(z0, 2), a0, 5) / sqrt(z0);
 }
 
-inline static double _LambdaE24(const double z) {
-  const static double a0[4] = {9.9998643952730293e-01, -1.3559507925471981e-05,
-                               9.6456296275015755e-10, -2.0852410532893096e-13};
+inline static double _LambdaE32(const double z) {
+  const static double a0[4] = {9.9999237152186726e-01, -7.6281727285568499e-06,
+                               3.0536699868997274e-10, -3.7171802006655959e-14};
   const double z0 = z + 0.25;
-  return chebval(-1 + 1152 / pow(z0, 2), a0, 4) / sqrt(z0);
+  return chebval(-1 + 2048 / pow(z0, 2), a0, 4) / sqrt(z0);
 }
 
-inline static double _LambdaE64(const double z) {
-  const static double a0[3] = {9.9999809270865958e-01, -1.9072722439854597e-06,
-                               1.9095897782497945e-11};
+inline static double _LambdaE128(const double z) {
+  const static double a0[3] = {9.9999952316642282e-01, -4.7683238349233873e-07,
+                               1.1936572376807404e-12};
   const double z0 = z + 0.25;
-  return chebval(-1 + 8192 / pow(z0, 2), a0, 3) / sqrt(z0);
+  return chebval(-1 + 32768 / pow(z0, 2), a0, 3) / sqrt(z0);
 }
 
-inline static double _LambdaE600(const double z) {
-  const static double a0[2] = {9.9999997829861853e-01, -2.1701378998945873e-08};
+inline static double _LambdaE1400(const double z) {
+  const static double a0[2] = {9.9999999601403089e-01, -3.9859690541081902e-09};
   const double z0 = z + 0.25;
-  // return chebval(-1 + 720000 / pow(z0, 2), a0, 2) / sqrt(z0);
-  return (a0[0] + a0[1] * (-1 + 720000 / pow(z0, 2))) / sqrt(z0);
+  // return chebval(-1 + 3920000 / pow(z0, 2), a0, 2) / sqrt(z0);
+  return (a0[0] + a0[1] * (-1 + 3920000 / pow(z0, 2))) / sqrt(z0);
 }
 
 double _LambdaE(const double z) {
-  if (z > 600) {
-    return _LambdaE600(z);
-  } else if (z > 64) {
-    return _LambdaE64(z);
-  } else if (z > 24) {
-    return _LambdaE24(z);
+  if (z > 1400) {
+    return _LambdaE1400(z);
+  } else if (z > 128) {
+    return _LambdaE128(z);
+  } else if (z > 32) {
+    return _LambdaE32(z);
+  } else if (z > 16) {
+    return _LambdaE16(z);
   }
-  return _LambdaE10(z);
+  return _Lambda0(z);
 }
 
 double _Lambda(const double z) {
-  double z2, zz, y, s;
+  double zz, y;
   const double zp = z + 0.25;
-  z2 = zp * zp;
-  s = sqrt(zp);
-  y = 1 - 1.5625e-02 / z2;
-  if (z > 800)
+  const double s = 1 / sqrt(zp);
+  const double z2 = 1 / (zp * zp);
+
+  y = 1 - 1.5625e-02 * z2;
+  if (z > 2014) // 2000
     goto scalereturn;
   zz = z2 * z2;
-  y += 2.5634765625e-03 / zz;
-  if (z > 90)
+  y += 2.5634765625e-03 * zz;
+  if (z > 141) // 92
     goto scalereturn;
   zz *= z2;
-  y -= 1.2798309326171875e-03 / zz;
-  if (z > 32)
+  y -= 1.2798309326171875e-03 * zz;
+  if (z > 40) // 31
     goto scalereturn;
   zz *= z2;
-  y += 1.3435110449790955e-03 / zz;
-  if (z > 17)
+  y += 1.3435110449790955e-03 * zz;
+  if (z > 20)
     goto scalereturn;
   zz *= z2;
-  y -= 2.4328966392204165e-03 / zz;
-  if (z > 12)
+  y -= 2.4328966392204165e-03 * zz;
+  if (z > 14)
     goto scalereturn;
   zz *= z2;
-  y += 6.754237533641572e-03 / zz;
+  y += 6.754237533641572e-03 * zz;
   if (z > 10)
     goto scalereturn;
   return _Lambda0(z);
 scalereturn:
-  return y / s;
+  return y * s;
 }
 
 // Lambda with integer argument. For initializing direct solver
 double _LambdaI(const size_t z) {
-  const static double LamInt[200] = {
+  const static double LamInt[256] = {
       1.7724538509055161e+00, 8.8622692545275805e-01, 6.6467019408956851e-01,
       5.5389182840797380e-01, 4.8465534985697706e-01, 4.3618981487127934e-01,
       3.9984066363200604e-01, 3.7128061622971992e-01, 3.4807557771536241e-01,
@@ -163,15 +166,33 @@ double _LambdaI(const size_t z) {
       7.2691204706139420e-02, 7.2499912062175889e-02, 7.2310121716463394e-02,
       7.2121814107826768e-02, 7.1934970029827211e-02, 7.1749570622533843e-02,
       7.1565597364527347e-02, 7.1383032065128041e-02, 7.1201856856840912e-02,
-      7.1022054188010511e-02, 7.0843606815678820e-02};
-  if (z > 199)
+      7.1022054188010511e-02, 7.0843606815678820e-02, 7.0666497798639621e-02,
+      7.0490710490682812e-02, 7.0316228534022709e-02, 7.0143035852904420e-02,
+      6.9971116647382606e-02, 6.9800455387267035e-02, 6.9631036806229979e-02,
+      6.9462845896070005e-02, 6.9295867901127531e-02, 6.9130088312847310e-02,
+      6.8965492864483391e-02, 6.8802067525941965e-02, 6.8639798498758134e-02,
+      6.8478672211202365e-02, 6.8318675313512642e-02, 6.8159794673248661e-02,
+      6.8002017370764292e-02, 6.7845330694794787e-02, 6.7689722138155342e-02,
+      6.7535179393547681e-02, 6.7381690349471446e-02, 6.7229243086237345e-02,
+      6.7077825872079153e-02, 6.6927427159361480e-02, 6.6778035580880774e-02,
+      6.6629639946256591e-02, 6.6482229238410892e-02, 6.6335792610132449e-02,
+      6.6190319380724269e-02, 6.6045799032731417e-02, 6.5902221208747211e-02,
+      6.5759575708295381e-02, 6.5617852484786132e-02, 6.5477041642544101e-02,
+      6.5337133433906180e-02, 6.5198118256387230e-02, 6.5059986649911833e-02,
+      6.4922729294110332e-02, 6.4786337005677333e-02, 6.4650800735790978e-02,
+      6.4516111567591405e-02, 6.4382260713716735e-02, 6.4249239513895010e-02,
+      6.4117039432590700e-02, 6.3985652056704242e-02, 6.3855069093323211e-02,
+      6.3725282367523783e-02, 6.3596283820221103e-02, 6.3468065506067428e-02,
+      6.3340619591396613e-02, 6.3213938352213811e-02, 6.3088014172229326e-02,
+      6.2962839540935220e-02, 6.2838407051723888e-02, 6.2714709400047267e-02,
+      6.2591739381615802e-02};
+  if (z > 255)
     return _Lambda((const double)z);
   return LamInt[z];
 }
 
-
 // Pact storage of lower triangular transform matrix. (18 x 18 + 18) / 2 items
-const double CM[171] __attribute__((aligned)) = {
+const double BMe[171] __attribute__((aligned)) = {
     1.0000000000000000e+00,  -5.0000000000000000e-01, 5.0000000000000000e-01,
     -2.5000000000000000e-01, -1.0000000000000000e+00, 2.5000000000000000e-01,
     2.5000000000000000e-01,  3.7500000000000000e-01,  -7.5000000000000000e-01,
@@ -230,8 +251,8 @@ const double CM[171] __attribute__((aligned)) = {
     -3.9428710937500000e-01, 1.4266967773437500e-01,  -3.0090332031250000e-02,
     3.7612915039062500e-03,  -2.5939941406250000e-04, 7.6293945312500000e-06};
 
-// Transpose of CM
-const double CMT[171] __attribute__((aligned)) = {
+// Transpose of BMe
+const double BMeT[171] __attribute__((aligned)) = {
     1.0000000000000000e+00,  -5.0000000000000000e-01, -2.5000000000000000e-01,
     2.5000000000000000e-01,  1.8750000000000000e-01,  -1.8750000000000000e-01,
     -1.5625000000000000e-01, 1.5625000000000000e-01,  1.3671875000000000e-01,
@@ -290,6 +311,118 @@ const double CMT[171] __attribute__((aligned)) = {
     3.0517578125000000e-05,  -4.8828125000000000e-04, 3.7612915039062500e-03,
     1.5258789062500000e-05,  -2.5939941406250000e-04, 7.6293945312500000e-06};
 
+void dct2(double *input, double *output) {
+  double tmp[324];
+  for (size_t i = 0; i < 18; i++) {
+    dct(input + i * 18, tmp + i * 18, 1);
+  }
+  for (size_t i = 0; i < 18; i++) {
+    dct(tmp + i, output + i, 18);
+  }
+}
+
+// Hard-coded DCT II for N=18
+void dct(double *input, double *output, size_t st) {
+  double out[18], z[9], zpm[9];
+  static const double DCTIIHH0[25] __attribute__((aligned)) = {
+      1.1111111111111110e-01,  1.1111111111111110e-01,  1.1111111111111110e-01,
+      1.1111111111111110e-01,  1.1111111111111110e-01,  1.0441029119843427e-01,
+      5.5555555555555552e-02,  -1.9294241962992262e-02, -8.5116049235441998e-02,
+      -1.1111111111111110e-01, 8.5116049235441998e-02,  -5.5555555555555552e-02,
+      -1.0441029119843427e-01, 1.9294241962992262e-02,  1.1111111111111110e-01,
+      5.5555555555555552e-02,  -1.1111111111111110e-01, 5.5555555555555552e-02,
+      5.5555555555555552e-02,  -1.1111111111111110e-01, 1.9294241962992262e-02,
+      -5.5555555555555552e-02, 8.5116049235441998e-02,  -1.0441029119843427e-01,
+      1.1111111111111110e-01};
+  static const double DCTIIHH1[16] __attribute__((aligned)) = {
+      1.0942308366802311e-01,  9.6225044864937631e-02,  7.1420845520726597e-02,
+      3.8002238147296523e-02,  9.6225044864937631e-02,  0.0000000000000000e+00,
+      -9.6225044864937631e-02, -9.6225044864937631e-02, 7.1420845520726597e-02,
+      -9.6225044864937631e-02, -3.8002238147296523e-02, 1.0942308366802311e-01,
+      3.8002238147296523e-02,  -9.6225044864937631e-02, 1.0942308366802311e-01,
+      -7.1420845520726597e-02};
+  static const double DCTIIa[16] __attribute__((aligned)) = {
+      1.1068829978797172e-01, 1.0732509180989648e-01,  1.0070086522629444e-01,
+      9.1016893809887978e-02, 1.0732509180989648e-01,  7.8567420131838608e-02,
+      2.8757671678057862e-02, -2.8757671678057862e-02, 1.0070086522629444e-01,
+      2.8757671678057862e-02, -6.3730715150116232e-02, -1.1068829978797172e-01,
+      9.1016893809887978e-02, -2.8757671678057862e-02, -1.1068829978797172e-01,
+      -4.6957584637855494e-02};
+  static const double DCTIIb[16] __attribute__((aligned)) = {
+      6.3730715150116232e-02,  4.6957584637855494e-02,  2.8757671678057862e-02,
+      9.6839714164064644e-03,  -1.0732509180989648e-01, -1.0732509180989648e-01,
+      -7.8567420131838608e-02, -2.8757671678057862e-02, 9.6839714164064644e-03,
+      9.1016893809887978e-02,  1.0732509180989648e-01,  4.6957584637855494e-02,
+      1.0070086522629444e-01,  -9.6839714164064644e-03, -1.0732509180989648e-01,
+      -6.3730715150116232e-02};
+  static const double DCTIIc[16] __attribute__((aligned)) = {
+      6.3730715150116232e-02,  -1.0732509180989648e-01, 9.6839714164064644e-03,
+      1.0070086522629444e-01,  4.6957584637855494e-02,  -1.0732509180989648e-01,
+      9.1016893809887978e-02,  -9.6839714164064644e-03, 2.8757671678057862e-02,
+      -7.8567420131838608e-02, 1.0732509180989648e-01,  -1.0732509180989648e-01,
+      9.6839714164064644e-03,  -2.8757671678057862e-02, 4.6957584637855494e-02,
+      -6.3730715150116232e-02};
+  static const double DCTIId[16] __attribute__((aligned)) = {
+      -4.6957584637855494e-02, 1.1068829978797172e-01, -2.8757671678057862e-02,
+      -9.1016893809887978e-02, 1.1068829978797172e-01, -6.3730715150116232e-02,
+      -2.8757671678057862e-02, 1.0070086522629444e-01, -2.8757671678057862e-02,
+      -2.8757671678057862e-02, 7.8567420131838608e-02, -1.0732509180989648e-01,
+      -9.1016893809887978e-02, 1.0070086522629444e-01, -1.0732509180989648e-01,
+      1.1068829978797172e-01};
+
+  for (size_t i = 0; i < 9; i++) {
+    z[i] = input[i * st] + input[(17 - i) * st];
+  }
+  for (size_t i = 0; i < 4; i++) {
+    zpm[i] = z[i] + z[8 - i];
+    zpm[5 + i] = z[i] - z[8 - i];
+  }
+  zpm[4] = z[4];
+
+  for (size_t i = 0; i < 5; i++) {
+    const double *t0 = &DCTIIHH0[i * 5];
+    out[4 * i] = t0[0] * zpm[0] + t0[1] * zpm[1] + t0[2] * zpm[2] +
+                 t0[3] * zpm[3] + t0[4] * zpm[4];
+  }
+  for (size_t i = 0; i < 4; i++) {
+    const double *t1 = &DCTIIHH1[i * 4];
+    out[2 + 4 * i] =
+        t1[0] * zpm[5] + t1[1] * zpm[6] + t1[2] * zpm[7] + t1[3] * zpm[8];
+  }
+
+  for (size_t i = 0; i < 9; i++) {
+    z[i] -= 2 * input[(17 - i) * st];
+  }
+
+  double z0 = DCTIIa[5] * z[4];
+  out[1] = z0;
+  out[3] = -z0;
+  out[5] = -z0;
+  out[7] = z0;
+  out[9] = (z[0] - z[1] - z[2] + z[3] + z[4] - z[5] - z[6] + z[7] + z[8]) *
+           DCTIIa[5];
+  out[11] = -z0;
+  out[13] = -z0;
+  out[15] = z0;
+  out[17] = z0;
+
+  for (size_t i = 0; i < 4; i++) {
+    double s0 = 0;
+    double s1 = 0;
+    for (size_t j = 0; j < 4; j++) {
+      s0 += DCTIIa[i * 4 + j] * z[j] + DCTIIb[i * 4 + j] * z[j + 5];
+      s1 += DCTIIc[i * 4 + j] * z[j] + DCTIId[i * 4 + j] * z[j + 5];
+    }
+    out[1 + 2 * i] += s0;
+    out[1 + 2 * (i + 5)] += s1;
+  }
+
+  for (size_t i = 0; i < 18; i++) {
+    output[i * st] = out[i];
+  }
+  output[0] *= 0.5;
+}
+
 size_t get_number_of_blocks(const size_t level) {
   return pow(2, level + 1) - 1;
 }
@@ -320,38 +453,35 @@ void get_ij(size_t *ij, const size_t level, const size_t block, const size_t s,
 size_t direct(const double *u, double *b, direct_plan *dplan, size_t direction,
               size_t strides) {
   size_t flops = 0;
+  const double sqrt_pi = 1.77245385090551602729816e0;
   const size_t N = dplan->N;
   for (size_t i = 0; i < N; i++)
     b[i] = 0.0;
   flops += N;
-
   if (direction == L2C) {
     const double *a = dplan->a;
     for (size_t n = 0; n < N; n = n + 2) {
       const double *ap = &a[n / 2];
       const double *cp = &u[n];
-      const double a0 = ap[0];
+      const double a0 = ap[0] * M_2_PI;
       for (size_t i = 0; i < N - n; i++) {
         b[i * strides] += a0 * ap[i] * cp[i];
       }
       flops += 3 * (N - n);
     }
     b[0] /= 2;
-    for (size_t i = 0; i < N; i++) {
-      b[i] *= M_2_PI;
-    }
+
     flops += N;
   } else {
     double *vn = (double *)fftw_malloc(N * sizeof(double));
     const double *an = dplan->an;
     const double *dn = dplan->dn;
-    const double sqrt_pi = 1.77245385090551602729816e0;
     vn[0] = u[0];
-    for (size_t i = 1; i < N; i++) {
+    for (size_t i = 1; i < N; i++)
       vn[i] = u[i * strides] * i;
-    }
+
     for (size_t n = 0; n < N; n++)
-      b[n * strides] = sqrt_pi * an[n] * vn[n];
+      b[n * strides] = sqrt_pi * vn[n] * an[n];
 
     for (size_t n = 2; n < N; n = n + 2) {
       const double *ap = &an[n / 2];
@@ -377,58 +507,6 @@ size_t directM(const double *input_array, double *output_array,
   size_t flops = 0;
   size_t h = 2 * s;
   size_t nL = N / h;
-
-  // This is the most straightforward implementation,
-  // but this is slow for large N
-  /*
-   for (size_t n = 0; n < s; n++) {
-     const double *ap = &a[n];
-     const double a0 = ap[0];
-     const double *cp = &input_array[2 * n * strides];
-     double *op = &output_array[0];
-     if (strides == 1) {
-       for (size_t i = 0; i < N - 2 * n; i++) {
-         (*op++) += a0 * (*ap++) * (*cp++);
-       }
-     } else {
-       for (size_t i = 0; i < N - 2 * n; i++) {
-         (*op) += a0 * (*ap++) * (*cp);
-         op += strides;
-         cp += strides;
-       }
-     }
-     flops += (N - 2 * n) * 3;
-   }
-   */
-
-  // Following implementation is faster, especially so for large N.
-  // First blockwise for all but last two blocks that are complicated
-  // due to N and Nn
-
-  //////////////////
-  /*
-  for (size_t block = 0; block < nL - 1; block++)
-  {
-    size_t i0 = block * h;
-    double *vp = &output_array[i0];
-    for (size_t i = 0; i < 2 * s; i = i + 2)
-    {
-      double s0 = 0.0;
-      double s1 = 0.0;
-      const double *ap0 = &a[0];
-      const double *ap1 = &a[i0+i];
-      const double *up = &input_array[i0+i];
-      for (size_t j = i; j < 4 * s; j = j + 2)
-      {
-        s0 += (*ap0) * (*ap1++) * (*up++);
-        s1 += (*ap0++) * (*ap1) * (*up++);
-      }
-      (*vp++) += s0;
-      (*vp++) += s1;
-    }
-  }
-  */
-  /////////////////
 
   for (size_t block = 0; block < nL - 1; block++) {
     size_t i0 = block * h;
@@ -496,49 +574,28 @@ size_t directM(const double *input_array, double *output_array,
 
 size_t directL(const double *input, double *output_array, fmm_plan *fmmplan,
                size_t strides) {
+  const double sqrt_pi = 1.77245385090551602729816e0;
   size_t s = fmmplan->s;
   size_t N = fmmplan->N;
   const double *an = fmmplan->dplan->an;
   const double *dn = fmmplan->dplan->dn;
   size_t h = 2 * s;
   size_t nL = N / h;
-  const double sqrt_pi = 1.77245385090551602729816e0;
   size_t flops = 0;
   double *op = &output_array[0];
   const double *ia = &input[0];
   const double *ap = &an[0];
   if (strides == 1) {
     for (size_t i = 0; i < N; i++)
-      (*op++) += sqrt_pi * (*ap++) * (*ia++);
+      (*op++) += sqrt_pi * (*ia++) * (*ap++);
   } else {
     for (size_t i = 0; i < N; i++) {
-      (*op) += sqrt_pi * (*ap++) * (*ia++);
+      (*op) += sqrt_pi * (*ia++) * (*ap++);
       op += strides;
     }
   }
   flops += N * 3;
 
-  // This is the most straightforward implementation
-  // for (size_t n = 1; n < s; n++) {
-  //  ap = &an[n];
-  //  ia = &input[2 * n];
-  //  op = &output_array[0];
-  //  if (strides == 1) {
-  //    for (size_t i = 0; i < N - 2 * n; i++) {
-  //      (*op++) -= dn[n] * (*ap++) * (*ia++);
-  //    }
-  //  } else {
-  //    for (size_t i = 0; i < N - 2 * n; i++) {
-  //      (*op) -= dn[n] * (*ap++) * (*ia++);
-  //      op += strides;
-  //    }
-  //  }
-  //  flops += (N - 2 * n) * 3;
-  //}
-
-  // This implementation is faster
-  // First blockwise for all but last two blocks that are complicated
-  // due to N and Nn
   for (size_t block = 0; block < nL - 1; block++) {
     size_t i0 = block * h;
     for (size_t n = 2; n < 4 * s; n = n + 2) {
@@ -550,13 +607,13 @@ size_t directL(const double *input, double *output_array, fmm_plan *fmmplan,
         double *vp = &output_array[i0];
         const double *ia = &input[i0 + n];
         for (i = 0; i < lmin(h, 2 * h - n); i++) {
-          (*vp++) -= d0 * (*ap++) * (*ia++);
+          (*vp++) -= d0 * (*ia++) * (*ap++);
         }
       } else {
         double *vp = &output_array[i0 * strides];
         const double *ia = &input[i0 + n];
         for (i = 0; i < lmin(h, 2 * h - n); i++) {
-          (*vp) -= d0 * (*ap++) * (*ia++);
+          (*vp) -= d0 * (*ia++) * (*ap++);
           vp += strides;
         }
       }
@@ -583,8 +640,7 @@ size_t directL(const double *input, double *output_array, fmm_plan *fmmplan,
     flops += (N - (2 * n + i0)) * 3;
   }
 
-  // Multiply result by (x+1/2) since we have created Chebyshev
-  // approximation for L(x, y)/(x+1/2)
+  // Multiply result by (x+1/2)
   op = &output_array[0];
   if (strides == 1) {
     for (size_t i = 0; i < N; i++) {
@@ -770,13 +826,13 @@ void free_fmm(fmm_plan *plan) {
     plan->T = NULL;
   }
   if (plan->M != 18) {
-    if (plan->Th != NULL) {
-      fftw_free(plan->Th);
-      plan->Th = NULL;
+    if (plan->B != NULL) {
+      fftw_free(plan->B);
+      plan->B = NULL;
     }
-    if (plan->ThT != NULL) {
-      fftw_free(plan->ThT);
-      plan->ThT = NULL;
+    if (plan->BT != NULL) {
+      fftw_free(plan->BT);
+      plan->BT = NULL;
     }
   }
   if (plan->ia != NULL) {
@@ -812,35 +868,46 @@ void free_fmm(fmm_plan *plan) {
 
 direct_plan *create_direct(size_t N, size_t direction) {
   direct_plan *dplan = (direct_plan *)fftw_malloc(sizeof(direct_plan));
-  const double sqrt_pi = 1.77245385090551602729816e0;
   dplan->a = NULL;
   dplan->an = NULL;
   dplan->dn = NULL;
   double *a = (double *)fftw_malloc(N * sizeof(double));
-  double aa[N];
-  a[0] = sqrt_pi;
-  aa[0] = sqrt_pi;
-  size_t N0 = (N < 1) ? N : 1;
-  for (size_t i = 1; i < N0; i++) {
+  size_t N0 = 256 < N ? 256 : N;
+  for (size_t i = 0; i < N0; i++) // Integer, precomputed values
     a[i] = _LambdaI(i);
-    aa[i] = a[i];
-  }
-  for (size_t i = N0; i < N; i++) {
-    //a[i] = a[i - 1] * (1 - 0.5 / i);
+  size_t DN = 8;
+  //size_t maxulp = 0;
+  //double maxabs = 0.0;
+  //double maxrel = 0.0;
+  for (size_t i = N0; i < N; i += DN) {
     a[i] = _LambdaI(i);
-    //printf("%d  %2.16e  %2.16e %2.16e \n", i, a[i], aa[i], a[i]-aa[i]);
+    //printf("i %d %d\n", i, maxulp);
+    size_t J0 = (size_t)i + DN < N ? (size_t)i + DN : N;
+    for (size_t j = i + 1; j < J0; j++) {
+      a[j] = a[j - 1] * (1 - 0.5 / j);
+      // a[j] = ((j << 1) -1) * a[j - 1] / (j << 1) ;
+      //a[j] = a[j - 1] - 0.5 * a[j - 1] / j;
+
+      //double s0 = _LambdaI(j);
+      //int ulp = (int)((a[j] - s0) / (nexttoward(a[j], 10) - a[j]));
+      //maxulp = (abs(ulp) > maxulp) ? abs(ulp) : maxulp;
+      //maxabs = (fabs(a[j] - s0) > maxabs) ? (fabs(a[j] - s0)) : maxabs;
+      //maxrel =
+      //    (fabs((a[j] - s0) / s0) > maxrel) ? (fabs((a[j] - s0) / s0)) : maxrel;
+      //printf("%d  %2.16e  %2.16e %2.16e %2.16e %d %d \n", j, a[j], s0,
+      //        fabs(a[j] - s0), fabs((a[j] - s0) / s0), ulp, maxulp);
+    }
   }
-  //printf("%2.16e %2.16e\n", a[N-1], aa[N-1]);
+  //printf("%2.16e %2.16e %d  \n", maxrel, maxabs, maxulp);
 
   dplan->a = a;
   if (direction == C2L | direction == BOTH) {
     double *dn = (double *)fftw_malloc((N + 1) / 2 * sizeof(double));
     double *an = (double *)fftw_malloc(N * sizeof(double));
     dn[0] = 0;
-    an[0] = M_2_SQRTPI;
+    an[0] = M_2_SQRTPI; //0.88622692545275801364908374167e0;
     for (size_t i = 1; i < N; i++) {
-      an[i] = 1 / (a[i] * i * (2*i + 1));
-      //printf("%2.16e %2.16e\n", an[i]- _Lambda(i-0.5)/(2*i+1));
+      an[i] = 1 /(a[i] * (2 * i * i + i)); // Using _Lambda(i-0.5) = 1/(i*_Lambda(i))
     }
     for (size_t i = 1; i < (N + 1) / 2; i++)
       dn[i] = a[i - 1] / (2 * i);
@@ -853,202 +920,16 @@ direct_plan *create_direct(size_t N, size_t direction) {
   return dplan;
 }
 
-// Direct matrix-vector DCT of fixed size N=18 and precomputed matrix is
-// faster than FFTW
-// void dct(double *input, double *output) {
-//  cblas_dgemv(CblasRowMajor, CblasNoTrans, 18, 18, 1, DCTII, 18, input, 1, 0,
-//              output, 1);
-//}
-
-void dct2(double *input, double *output) {
-  double tmp[324] __attribute__((aligned));
-  // Row major DCT II matrix of shape 18 x 18
-  const static double DCTII[324] __attribute__((aligned)) = {
-      5.5555555555555552e-02,  5.5555555555555552e-02,
-      5.5555555555555552e-02,  5.5555555555555552e-02,
-      5.5555555555555552e-02,  5.5555555555555552e-02,
-      5.5555555555555552e-02,  5.5555555555555552e-02,
-      5.5555555555555552e-02,  5.5555555555555552e-02,
-      5.5555555555555552e-02,  5.5555555555555552e-02,
-      5.5555555555555552e-02,  5.5555555555555552e-02,
-      5.5555555555555552e-02,  5.5555555555555552e-02,
-      5.5555555555555552e-02,  5.5555555555555552e-02,
-      1.1068829978797173e-01,  1.0732509180989648e-01,
-      1.0070086522629444e-01,  9.1016893809887978e-02,
-      7.8567420131838622e-02,  6.3730715150116246e-02,
-      4.6957584637855494e-02,  2.8757671678057886e-02,
-      9.6839714164064592e-03,  -9.6839714164064453e-03,
-      -2.8757671678057872e-02, -4.6957584637855480e-02,
-      -6.3730715150116246e-02, -7.8567420131838608e-02,
-      -9.1016893809887991e-02, -1.0070086522629444e-01,
-      -1.0732509180989648e-01, -1.1068829978797173e-01,
-      1.0942308366802311e-01,  9.6225044864937631e-02,
-      7.1420845520726597e-02,  3.8002238147296537e-02,
-      6.8035933285964064e-18,  -3.8002238147296502e-02,
-      -7.1420845520726597e-02, -9.6225044864937603e-02,
-      -1.0942308366802311e-01, -1.0942308366802313e-01,
-      -9.6225044864937617e-02, -7.1420845520726611e-02,
-      -3.8002238147296502e-02, -2.0410779985789219e-17,
-      3.8002238147296558e-02,  7.1420845520726584e-02,
-      9.6225044864937645e-02,  1.0942308366802311e-01,
-      1.0732509180989648e-01,  7.8567420131838622e-02,
-      2.8757671678057886e-02,  -2.8757671678057872e-02,
-      -7.8567420131838608e-02, -1.0732509180989648e-01,
-      -1.0732509180989649e-01, -7.8567420131838636e-02,
-      -2.8757671678057848e-02, 2.8757671678057810e-02,
-      7.8567420131838595e-02,  1.0732509180989648e-01,
-      1.0732509180989649e-01,  7.8567420131838636e-02,
-      2.8757671678057959e-02,  -2.8757671678057799e-02,
-      -7.8567420131838650e-02, -1.0732509180989648e-01,
-      1.0441029119843427e-01,  5.5555555555555566e-02,
-      -1.9294241962992256e-02, -8.5116049235441985e-02,
-      -1.1111111111111110e-01, -8.5116049235442040e-02,
-      -1.9294241962992259e-02, 5.5555555555555483e-02,
-      1.0441029119843427e-01,  1.0441029119843430e-01,
-      5.5555555555555525e-02,  -1.9294241962992207e-02,
-      -8.5116049235442040e-02, -1.1111111111111110e-01,
-      -8.5116049235441971e-02, -1.9294241962992287e-02,
-      5.5555555555555629e-02,  1.0441029119843426e-01,
-      1.0070086522629444e-01,  2.8757671678057886e-02,
-      -6.3730715150116246e-02, -1.1068829978797173e-01,
-      -7.8567420131838636e-02, 9.6839714164064315e-03,
-      9.1016893809887950e-02,  1.0732509180989649e-01,
-      4.6957584637855473e-02,  -4.6957584637855411e-02,
-      -1.0732509180989648e-01, -9.1016893809887922e-02,
-      -9.6839714164064991e-03, 7.8567420131838511e-02,
-      1.1068829978797173e-01,  6.3730715150116218e-02,
-      -2.8757671678057581e-02, -1.0070086522629434e-01,
-      9.6225044864937631e-02,  6.8035933285964064e-18,
-      -9.6225044864937603e-02, -9.6225044864937617e-02,
-      -2.0410779985789219e-17, 9.6225044864937645e-02,
-      9.6225044864937673e-02,  3.4017966642982035e-17,
-      -9.6225044864937645e-02, -9.6225044864937687e-02,
-      -4.7625153300174848e-17, 9.6225044864937631e-02,
-      9.6225044864937687e-02,  6.1232339957367660e-17,
-      -9.6225044864937520e-02, -9.6225044864937700e-02,
-      1.2253345554102288e-16,  9.6225044864937617e-02,
-      9.1016893809887978e-02,  -2.8757671678057872e-02,
-      -1.1068829978797173e-01, -4.6957584637855550e-02,
-      7.8567420131838595e-02,  1.0070086522629444e-01,
-      -9.6839714164064176e-03, -1.0732509180989648e-01,
-      -6.3730715150116357e-02, 6.3730715150116135e-02,
-      1.0732509180989644e-01,  9.6839714164065130e-03,
-      -1.0070086522629434e-01, -7.8567420131838595e-02,
-      4.6957584637855376e-02,  1.1068829978797175e-01,
-      2.8757671678057914e-02,  -9.1016893809887853e-02,
-      8.5116049235441998e-02,  -5.5555555555555532e-02,
-      -1.0441029119843427e-01, 1.9294241962992217e-02,
-      1.1111111111111110e-01,  1.9294241962992370e-02,
-      -1.0441029119843427e-01, -5.5555555555555705e-02,
-      8.5116049235442026e-02,  8.5116049235442096e-02,
-      -5.5555555555555615e-02, -1.0441029119843431e-01,
-      1.9294241962992360e-02,  1.1111111111111110e-01,
-      1.9294241962992134e-02,  -1.0441029119843424e-01,
-      -5.5555555555555414e-02, 8.5116049235441985e-02,
-      7.8567420131838622e-02,  -7.8567420131838608e-02,
-      -7.8567420131838636e-02, 7.8567420131838595e-02,
-      7.8567420131838636e-02,  -7.8567420131838650e-02,
-      -7.8567420131838567e-02, 7.8567420131838511e-02,
-      7.8567420131838581e-02,  -7.8567420131838497e-02,
-      -7.8567420131838595e-02, 7.8567420131838483e-02,
-      7.8567420131838608e-02,  -7.8567420131838483e-02,
-      -7.8567420131838886e-02, 7.8567420131838470e-02,
-      7.8567420131838622e-02,  -7.8567420131838747e-02,
-      7.1420845520726597e-02,  -9.6225044864937603e-02,
-      -3.8002238147296502e-02, 1.0942308366802311e-01,
-      3.4017966642982035e-17,  -1.0942308366802313e-01,
-      3.8002238147296440e-02,  9.6225044864937687e-02,
-      -7.1420845520726625e-02, -7.1420845520726736e-02,
-      9.6225044864937617e-02,  3.8002238147296384e-02,
-      -1.0942308366802310e-01, -2.9942688208452948e-16,
-      1.0942308366802314e-01,  -3.8002238147296558e-02,
-      -9.6225044864937923e-02, 7.1420845520726278e-02,
-      6.3730715150116246e-02,  -1.0732509180989647e-01,
-      9.6839714164064315e-03,  1.0070086522629447e-01,
-      -7.8567420131838525e-02, -4.6957584637855668e-02,
-      1.1068829978797171e-01,  -2.8757671678057581e-02,
-      -9.1016893809888172e-02, 9.1016893809887867e-02,
-      2.8757671678058299e-02,  -1.1068829978797175e-01,
-      4.6957584637854995e-02,  7.8567420131838900e-02,
-      -1.0070086522629433e-01, -9.6839714164069744e-03,
-      1.0732509180989656e-01,  -6.3730715150115719e-02,
-      5.5555555555555566e-02,  -1.1111111111111110e-01,
-      5.5555555555555483e-02,  5.5555555555555525e-02,
-      -1.1111111111111110e-01, 5.5555555555555629e-02,
-      5.5555555555555719e-02,  -1.1111111111111110e-01,
-      5.5555555555555608e-02,  5.5555555555555740e-02,
-      -1.1111111111111110e-01, 5.5555555555555580e-02,
-      5.5555555555555768e-02,  -1.1111111111111110e-01,
-      5.5555555555555219e-02,  5.5555555555555788e-02,
-      -1.1111111111111110e-01, 5.5555555555555532e-02,
-      4.6957584637855494e-02,  -1.0732509180989648e-01,
-      9.1016893809888005e-02,  -9.6839714164066153e-03,
-      -7.8567420131838567e-02, 1.1068829978797173e-01,
-      -6.3730715150116274e-02, -2.8757671678057522e-02,
-      1.0070086522629441e-01,  -1.0070086522629451e-01,
-      2.8757671678057730e-02,  6.3730715150115941e-02,
-      -1.1068829978797172e-01, 7.8567420131838442e-02,
-      9.6839714164062025e-03,  -9.1016893809887769e-02,
-      1.0732509180989659e-01,  -4.6957584637855293e-02,
-      3.8002238147296537e-02,  -9.6225044864937617e-02,
-      1.0942308366802311e-01,  -7.1420845520726500e-02,
-      -4.7625153300174848e-17, 7.1420845520726570e-02,
-      -1.0942308366802314e-01, 9.6225044864937617e-02,
-      -3.8002238147296218e-02, -3.8002238147296766e-02,
-      9.6225044864937520e-02,  -1.0942308366802310e-01,
-      7.1420845520726278e-02,  -5.4497522255058850e-17,
-      -7.1420845520726792e-02, 1.0942308366802322e-01,
-      -9.6225044864937576e-02, 3.8002238147296120e-02,
-      2.8757671678057886e-02,  -7.8567420131838692e-02,
-      1.0732509180989649e-01,  -1.0732509180989641e-01,
-      7.8567420131838511e-02,  -2.8757671678057581e-02,
-      -2.8757671678057904e-02, 7.8567420131838608e-02,
-      -1.0732509180989656e-01, 1.0732509180989641e-01,
-      -7.8567420131838456e-02, 2.8757671678057324e-02,
-      2.8757671678057966e-02,  -7.8567420131839205e-02,
-      1.0732509180989667e-01,  -1.0732509180989629e-01,
-      7.8567420131838137e-02,  -2.8757671678057255e-02,
-      1.9294241962992269e-02,  -5.5555555555555608e-02,
-      8.5116049235442012e-02,  -1.0441029119843430e-01,
-      1.1111111111111110e-01,  -1.0441029119843420e-01,
-      8.5116049235442012e-02,  -5.5555555555555247e-02,
-      1.9294241962992332e-02,  1.9294241962992547e-02,
-      -5.5555555555555441e-02, 8.5116049235442151e-02,
-      -1.0441029119843420e-01, 1.1111111111111110e-01,
-      -1.0441029119843435e-01, 8.5116049235441943e-02,
-      -5.5555555555555837e-02, 1.9294241962992224e-02,
-      9.6839714164064592e-03,  -2.8757671678057848e-02,
-      4.6957584637855473e-02,  -6.3730715150116204e-02,
-      7.8567420131838581e-02,  -9.1016893809887950e-02,
-      1.0070086522629441e-01,  -1.0732509180989645e-01,
-      1.1068829978797172e-01,  -1.1068829978797173e-01,
-      1.0732509180989661e-01,  -1.0070086522629432e-01,
-      9.1016893809888269e-02,  -7.8567420131838428e-02,
-      6.3730715150116024e-02,  -4.6957584637855980e-02,
-      2.8757671678057626e-02,  -9.6839714164070143e-03};
-
-  // DCT along rows
-  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans, 18, 18, 18, 1, input, 18,
-              DCTII, 18, 0, tmp, 18);
-
-  // DCT along columns
-  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 18, 18, 18, 1, DCTII,
-              18, tmp, 18, 0, output, 18);
-}
-
 fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
                      const size_t direction, size_t lagrange, const size_t v) {
   fmm_plan *fmmplan = (fmm_plan *)malloc(sizeof(fmm_plan));
   fftw_plan plan1d, plan;
   uint64_t t1 = tic;
-
   size_t Nn;
   size_t s;
   size_t ij[2];
   size_t directions[2];
   size_t num_directions = 2;
-  assert(maxs >= 32); // Because of implementation for _Lambda/_LambdaE. Easily
-                      // adjusted for less, but there should be no need.
   switch (direction) {
   case L2C:
     directions[0] = 0;
@@ -1066,8 +947,8 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
   double **A = (double **)calloc(2, sizeof(double *));
   fmmplan->A = A;
   fmmplan->T = NULL;
-  fmmplan->Th = NULL;
-  fmmplan->ThT = NULL;
+  fmmplan->B = NULL;
+  fmmplan->BT = NULL;
   fmmplan->ia = NULL;
   fmmplan->oa = NULL;
   fmmplan->work = NULL;
@@ -1103,6 +984,7 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
     printf("Given max s %lu \n", maxs);
     printf("Computed s %lu \n", s);
     printf("Computed N %lu\n", Nn);
+    printf("Lagrange %lu\n", lagrange);
   }
 
   double *fun = (double *)fftw_malloc(M * M * sizeof(double));
@@ -1138,8 +1020,8 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
   double *fx1 = (double *)fftw_malloc(MM * sizeof(double));
   double *lx1 = (double *)fftw_malloc(MM * sizeof(double));
 
-  //uint64_t t00 = 0;
-  //uint64_t t11 = 0;
+  // uint64_t t00 = 0;
+  // uint64_t t11 = 0;
 
   size_t kk = 0;
   for (size_t level = 0; level < L; level++) {
@@ -1154,8 +1036,8 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
           size_t x0 = 2 * (ij[0] + p * h) + h;
           for (size_t di = 0; di < num_directions; di++) {
             const size_t dir = directions[di];
-            //uint64_t r0 = tic;
-            // ff is input to the DCT
+            // uint64_t r0 = tic;
+            //  ff is input to the DCT
             double *ff = (lagrange == 0) ? &fun[0] : &A[dir][kk * MM];
             double *f00 = &fx0[q * MM];
             double *fpq = &fx0[(q - p) * MM];
@@ -1168,34 +1050,33 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
                 size_t xi = j * M + i;
                 if (di == 0 && block == 0 && p == 0) {
                   if (j < M - i) { // Persymmetric Lambda((y-x)/2)
-                    //double m0 = _Lambda((y - x) / 2);
-                    double m0 = _LambdaE((y - x) / 2);
+                    double m0 = _Lambda((y - x) / 2);
+                    //double m0 = _LambdaE((y - x) / 2);
                     f00[ix] = m0;
                     f00[MM - xi - 1] = m0;
                   }
                 }
-                if (dir == L2C) {
+                if (di == 0) {
                   if (j >= i) { // Symmetric Lambda((x+y)/2)
-                    //double m1 = _Lambda((x + y) / 2);
-                    double m1 = _LambdaE((x + y) / 2);
+                    double m1 = _Lambda((x + y) / 2);
+                    //double m1 = _LambdaE((x + y) / 2);
                     fx1[ix] = m1;
                     fx1[xi] = m1;
                   }
+                }
+                if (dir == L2C) {
                   (*ff++) = fpq[ix] * fx1[ix];
                 } else {
-                  if (j >= i) {
-                    //double l1 = -_Lambda((x + y - 1) / 2) / (x + y + 1);
-                    double l1 = -_LambdaE((x + y - 1) / 2) / (x + y + 1);
-                    lx1[ix] = l1;
-                    lx1[xi] = l1;
-                  }
-                  (*ff++) = (fpq[ix] * lx1[ix] / (y - x - 1));
+                  //(*ff++) = -2 * (fpq[ix] / fx1[ix]) /
+                  //          ((y - x - 1) * (x + y) * (x + y + 1));
+                  (*ff++) = -2 * (fpq[ix] /
+                            (fx1[ix] * (x + y) * (x + y + 1) * (y - x - 1)));
                 }
               }
             }
 
-            //uint64_t r1 = tic;
-            //t00 += r1 - r0;
+            // uint64_t r1 = tic;
+            // t00 += r1 - r0;
             if (lagrange == 0) {
               if (use_FFTW) {
                 fftw_execute(plan);
@@ -1213,7 +1094,7 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
                 dct2(&fun[0], &A[dir][kk * MM]);
               }
             }
-            //t11 += tic - r1;
+            // t11 += tic - r1;
           }
           kk += 1;
         }
@@ -1259,20 +1140,20 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
   }
   fmmplan->T = T;
 
-  double *Th = NULL;
-  double *ThT = NULL;
+  double *B = NULL;
+  double *BT = NULL;
   if (!use_FFTW && lagrange == 0) {
     if (v > 1)
       printf("Using exact binomial matrix\n");
-    Th = (double *)&CM[0];
-    ThT = (double *)&CMT[0];
+    B = (double *)&BMe[0];
+    BT = (double *)&BMeT[0];
   } else {
     if (lagrange == 0) {
-      Th = (double *)fftw_malloc((MM + M) / 2 * sizeof(double));
-      ThT = (double *)fftw_malloc((MM + M) / 2 * sizeof(double));
-      double *Tha = (double *)fftw_malloc(MM * sizeof(double));
-      double *ThTa = (double *)fftw_malloc(MM * sizeof(double));
-      double *th = &Tha[0];
+      B = (double *)fftw_malloc((MM + M) / 2 * sizeof(double));
+      BT = (double *)fftw_malloc((MM + M) / 2 * sizeof(double));
+      double *Ba = (double *)fftw_malloc(MM * sizeof(double));
+      double *BTa = (double *)fftw_malloc(MM * sizeof(double));
+      double *th = &Ba[0];
       for (size_t k = 0; k < M; k++) {
         for (size_t j = 0; j < M; j++) {
           fun[j] = cos(k * acos((xj[j] - 1) / 2));
@@ -1284,31 +1165,31 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
           *th++ = fun_hat[j] / M;
       }
       // Make transpose
-      th = &Tha[0];
-      double *tht = &ThTa[0];
+      th = &Ba[0];
+      double *tht = &BTa[0];
       for (size_t i = 0; i < M; i++) {
         for (size_t j = 0; j < M; j++) {
           tht[i * M + j] = th[j * M + i];
         }
       }
       /// Move to compact storage
-      th = &Th[0];
+      th = &B[0];
       for (size_t k = 0; k < M; k++) {
         for (size_t j = 0; j < k + 1; j++) {
-          (*th++) = Tha[k * M + j];
+          (*th++) = Ba[k * M + j];
         }
       }
-      tht = &ThT[0];
+      tht = &BT[0];
       for (size_t k = 0; k < M; k++) {
         for (size_t j = k; j < M; j++) {
-          (*tht++) = ThTa[k * M + j];
+          (*tht++) = BTa[k * M + j];
         }
       }
-      fftw_free(Tha);
-      fftw_free(ThTa);
+      fftw_free(Ba);
+      fftw_free(BTa);
 
     } else {
-      Th = (double *)fftw_malloc(2 * MM * sizeof(double));
+      B = (double *)fftw_malloc(2 * MM * sizeof(double));
       double *xh = (double *)fftw_malloc(2 * M * sizeof(double));
       for (size_t i = 0; i < M; i++) {
         xh[i] = (xj[i] - 1) / 2;
@@ -1320,14 +1201,14 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
         for (size_t j = 0; j < M; j++) {
           double s0 = wj[j] / (xh[i] - xj[j]);
           double s1 = wj[j] / (xh[M + i] - xj[j]);
-          Th[i * M + j] = s0;
-          Th[MM + i * M + j] = s1;
+          B[i * M + j] = s0;
+          B[MM + i * M + j] = s1;
           sum0 += s0;
           sum1 += s1;
         }
         for (size_t j = 0; j < M; j++) {
-          Th[i * M + j] /= sum0;
-          Th[MM + i * M + j] /= sum1;
+          B[i * M + j] /= sum0;
+          B[MM + i * M + j] /= sum1;
         }
       }
       fftw_free(xh);
@@ -1367,8 +1248,8 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
   if (lagrange == 1) {
     fftw_free(wj);
   }
-  fmmplan->Th = Th;
-  fmmplan->ThT = ThT;
+  fmmplan->B = B;
+  fmmplan->BT = BT;
   uint64_t t2 = tic;
   if (v > 1)
     printf("Initialization %2.4e s\n", dtics(t1, t2));
@@ -1442,8 +1323,8 @@ size_t execute(const double *input_array, double *output_array,
   size_t s = fmmplan->s;
   size_t M = fmmplan->M;
   double *T = fmmplan->T;
-  double *Th = fmmplan->Th;
-  double *ThT = fmmplan->ThT;
+  double *B = fmmplan->B;
+  double *BT = fmmplan->BT;
   double *A = fmmplan->A[direction];
   size_t flops = 0;
   size_t lagrange = fmmplan->lagrange;
@@ -1515,6 +1396,7 @@ size_t execute(const double *input_array, double *output_array,
 
     const size_t MM = M * M;
     const size_t K = get_number_of_blocks(L - 1) * 2;
+
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, K, M, s, 1.0,
                 &ia[2 * s], s, &T[odd * s * M], M, 0, wk[L - 1], M);
     flops += 2 * K * s * M;
@@ -1526,13 +1408,12 @@ size_t execute(const double *input_array, double *output_array,
         int b0 = (block - 1) / 2;
         int q0 = (block - 1) % 2;
         if (lagrange == 0) {
-          matvectri(&Th[0], wq, &w1[(b0 * 2 + q0) * M], fmmplan->work, M,
-                    false);
+          matvectri(&B[0], wq, &w1[(b0 * 2 + q0) * M], fmmplan->work, M, false);
           flops += MM; //+2*M;
         } else {
-          cblas_dgemv(CblasRowMajor, CblasTrans, M, M, 1, &Th[0], M, &wq[0], 1,
+          cblas_dgemv(CblasRowMajor, CblasTrans, M, M, 1, &B[0], M, &wq[0], 1,
                       0, &w1[(b0 * 2 + q0) * M], 1);
-          cblas_dgemv(CblasRowMajor, CblasTrans, M, M, 1, &Th[MM], M, &wq[M], 1,
+          cblas_dgemv(CblasRowMajor, CblasTrans, M, M, 1, &B[MM], M, &wq[M], 1,
                       1, &w1[(b0 * 2 + q0) * M], 1);
 
           flops += 4 * MM;
@@ -1546,14 +1427,6 @@ size_t execute(const double *input_array, double *output_array,
         size_t Nd = block * 2 * M;
         double *cp = &ck[level][Nd];
         double *wq = &wk[level][Nd];
-        /*for (size_t q = 0; q < 2; q++) {
-          for (size_t p = 0; p < q + 1; p++) {
-            cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &A[ik * MM],
-                        M, &wq[q * M], 1, 1, &cp[p * M], 1);
-            flops += 2 * MM;
-            ik++;
-          }
-        }*/
         cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &A[ik * MM], M, wq, 1,
                     0, cp, 1);
         cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &A[(ik + 1) * MM], M,
@@ -1571,12 +1444,12 @@ size_t execute(const double *input_array, double *output_array,
       for (size_t block = 0; block < get_number_of_blocks(level + 1) - 1;
            block++) {
         if (lagrange == 0) {
-          matvectri(&ThT[0], &c0[block * M], &c1[block * 2 * M], NULL, M, true);
+          matvectri(&BT[0], &c0[block * M], &c1[block * 2 * M], NULL, M, true);
           flops += MM;
         } else {
-          cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &Th[0], M,
+          cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &B[0], M,
                       &c0[block * M], 1, 1, &c1[block * 2 * M], 1);
-          cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &Th[MM], M,
+          cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &B[MM], M,
                       &c0[block * M], 1, 1, &c1[block * 2 * M + M], 1);
           flops += 4 * MM;
         }

@@ -8,7 +8,7 @@ size_t max(size_t a, size_t b) { return (a > b) ? a : b; }
 double fmax(double a, double b) { return (a > b) ? a : b; }
 
 void test_forward_backward(size_t N, size_t maxs, size_t M, double m,
-                           bool random, size_t lagrange, size_t verbose) {
+                           size_t random, size_t lagrange, size_t verbose) {
   if (verbose > 1)
     printf("test_forward_backward\n");
   fmm_plan *fmmplan = create_fmm(N, maxs, M, BOTH, lagrange, verbose);
@@ -18,7 +18,7 @@ void test_forward_backward(size_t N, size_t maxs, size_t M, double m,
   // srand48((unsigned int)time(NULL));
   srand48(1);
   // Initialize some input array
-  if (random) {
+  if (random == 1) {
     for (size_t i = 0; i < N; i++)
       input_array[i] = (2 * drand48() - 1) / pow(i + 1, m);
   } else {
@@ -31,16 +31,22 @@ void test_forward_backward(size_t N, size_t maxs, size_t M, double m,
     printf("Leg2cheb\n");
 
   size_t flops = execute(input_array, output_array, fmmplan, L2C, 1);
+
   double *ia = (double *)calloc(N, sizeof(double));
   // Cheb to Leg
   flops += execute(output_array, ia, fmmplan, C2L, 1);
 
-  // Compute L2 error norm
+  // Compute maximum error
   double error = 0.0;
-  for (size_t j = 0; j < N; j++)
+  for (size_t j = 0; j < N; j++) {
     error = fmax(fabs(input_array[j] - ia[j]), error);
+  }
 
-  printf("N %6lu L inf Error = %2.8e \n", N, error);
+  double e0 = 0;
+  for (size_t j = 0; j < N; j++)
+    e0 = fmax(fabs(ia[j]), e0);
+
+  printf("N %6lu L inf Error = %2.8e \n", N, error / e0);
   printf("               Flops = %lu\n\n", flops);
 #ifdef TEST
   assert(error < 1e-10);
@@ -419,49 +425,48 @@ void test_directM(size_t N, size_t repeat, size_t verbose, size_t s, size_t M) {
 }
 
 void test_dct(size_t N, size_t repeat) {
-  double *fun = (double *)fftw_malloc(N * N * sizeof(double));
-  double *fun_hat = (double *)fftw_malloc(N * N * sizeof(double));
-  double *fun_hat2 = (double *)fftw_malloc(N * N * sizeof(double));
-  size_t M = N * N;
-  fftw_plan plan =
-      fftw_plan_r2r_1d(N, fun, fun_hat, FFTW_REDFT10, FFTW_MEASURE);
+  double *fun = (double *)fftw_malloc(N * sizeof(double));
+  //double *fun_hat = (double *)fftw_malloc(N * sizeof(double));
+  //fftw_complex *fun = (fftw_complex *)fftw_malloc(N * sizeof(fftw_complex));
+  fftw_complex *fun_hat = (fftw_complex *)fftw_malloc(N * sizeof(fftw_complex));
+
+  //fftw_plan plan = fftw_plan_r2r_1d(N, fun, fun_hat, FFTW_REDFT10, FFTW_PATIENT);
+  //fftw_plan plan = fftw_plan_dft_1d(N, fun, fun_hat, FFTW_FORWARD, FFTW_PATIENT);
+  fftw_plan plan = fftw_plan_dft_r2c_1d(N, fun, fun_hat, FFTW_PATIENT);
+
   double min_time = 1e8;
   double min_time2 = 1e8;
-  for (size_t i = 0; i < M; i++) {
+  for (size_t i = 0; i < N; i++) {
     fun[i] = i * i;
+    //fun[i][0] = i * i;
   }
-  dct2(&fun[0], &fun_hat[0]);
-  //dctH2(&fun[0], &fun_hat2[0]);
-  double error = 0;
-  for (size_t i = 0; i < M; i++) {
-    error += fabs(fun_hat2[i] - fun_hat[i]);
-    // printf("%2.6e %2.6e \n", fun_hat[i], fun_hat2[i]);
-  }
-  printf("Error %2.6e\n", error);
-  double z[9], zp[9];
+
   uint64_t t0 = tic;
   for (size_t i = 0; i < repeat; i++) {
     uint64_t g0 = tic;
-    ///fftw_execute(plan);
-    //dctH2(fun, fun_hat);
+    fftw_execute(plan);
     double s1 = toc(g0);
     min_time = s1 < min_time ? s1 : min_time;
   }
+  printf("Time avg fftw %2.6e %2.6e \n", min_time, toc(t0) / repeat);
 
-  printf("Time avg fftw %2.6e\n", min_time);// toc(t0) / repeat);
-  t0 = tic;
-  for (size_t i = 0; i < repeat; i++) {
-    uint64_t g0 = tic;
-    dct2(fun, fun_hat2);
-    double s1 = toc(g0);
-    min_time2 = s1 < min_time2 ? s1 : min_time2;
+  double add, mul, fma;
+  fftw_flops(plan, &add, &mul, &fma);
+  printf("N %d Flops %f\n", N, add + mul + 2 * fma);
+
+  if (N == 18) {
+    t0 = tic;
+    for (size_t i = 0; i < repeat; i++) {
+      uint64_t g0 = tic;
+      dct(fun, fun_hat, 1);
+      double s1 = toc(g0);
+      min_time2 = s1 < min_time2 ? s1 : min_time2;
+    }
+    printf("Time avg dct %2.6e %2.6e\n", min_time2, toc(t0) / repeat);
   }
-  double err = fun_hat[5] - fun_hat2[5];
-  printf("Time avg dct2 %2.6e\n", min_time2); // toc(t0) / repeat);
-  printf("%lu %2.6e %2.6e \n", N, min_time, err);
+  fftw_print_plan(plan);
   fftw_free(fun);
   fftw_free(fun_hat);
-  fftw_free(fun_hat2);
   fftw_destroy_plan(plan);
 }
 
@@ -482,12 +487,12 @@ void test_matvectriZ(size_t N, size_t repeat, size_t M, size_t lagrange,
         int b0 = (block - 1) / 2;
         int q0 = (block - 1) % 2;
         if (lagrange == 0) {
-          matvectri(&fmmplan->Th[0], wq, &w1[(b0 * 2 + q0) * M], fmmplan->work,
+          matvectri(&fmmplan->B[0], wq, &w1[(b0 * 2 + q0) * M], fmmplan->work,
                      M, false);
         } else {
-          cblas_dgemv(CblasRowMajor, CblasTrans, M, M, 1, &fmmplan->Th[0], M,
+          cblas_dgemv(CblasRowMajor, CblasTrans, M, M, 1, &fmmplan->B[0], M,
     &wq[0], 1, 0, &w1[(b0 * 2 + q0) * M], 1); cblas_dgemv(CblasRowMajor,
-    CblasTrans, M, M, 1, &fmmplan->Th[M * M], M, &wq[M], 1, 0, &w1[(b0 * 2 + q0)
+    CblasTrans, M, M, 1, &fmmplan->B[M * M], M, &wq[M], 1, 0, &w1[(b0 * 2 + q0)
     * M], 1);
         }
       }
@@ -499,12 +504,12 @@ void test_matvectriZ(size_t N, size_t repeat, size_t M, size_t lagrange,
       for (size_t block = 0; block < get_number_of_blocks(level + 1) - 1;
            block++) {
         if (lagrange == 0) {
-          matvectri(&fmmplan->ThT[0], &c0[block * M], &c1[block * 2 * M], NULL,
+          matvectri(&fmmplan->BT[0], &c0[block * M], &c1[block * 2 * M], NULL,
                     M, true);
         } else {
-          cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &fmmplan->Th[0], M,
+          cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &fmmplan->B[0], M,
                       &c0[block * M], 1, 1, &c1[block * 2 * M], 1);
-          cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &fmmplan->Th[M * M],
+          cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &fmmplan->B[M * M],
                       M, &c0[block * M], 1, 1, &c1[block * 2 * M + M], 1);
         }
       }
@@ -519,8 +524,8 @@ void test_matvectriZ(size_t N, size_t repeat, size_t M, size_t lagrange,
   free_fmm(fmmplan);
 }
 
-void test_init(size_t N, size_t maxs, size_t repeat, size_t direction,
-               size_t M, size_t lagrange, size_t verbose) {
+void test_init(size_t N, size_t maxs, size_t repeat, size_t direction, size_t M,
+               size_t lagrange, size_t verbose) {
   if (verbose > 1)
     printf("test_init %lu\n", direction);
 
@@ -539,7 +544,6 @@ void test_init(size_t N, size_t maxs, size_t repeat, size_t direction,
          dtics(t0, t1) / repeat, min_time);
 }
 
-
 int main(int argc, char *argv[]) {
   int opt;
   size_t N;
@@ -548,7 +552,7 @@ int main(int argc, char *argv[]) {
   size_t num_threads = 1;
   size_t lagrange = 0;
   size_t M = 18;
-  bool R = false;
+  size_t R = 0;
   double m = 0;
   size_t repeat = 1;
   unsigned direction;
@@ -563,7 +567,7 @@ int main(int argc, char *argv[]) {
       "  -r      Repeat computation this many times (for timing, default=1)\n"
       "  -v      Level of verbosity (optional, default=0)\n"
       "  -t      Number of threads if using openmp\n"
-      "  -R      Use random data (optional, default=false)\n"
+      "  -R      Use random data (optional, default=0)\n"
       "  -d      Kind of transform to run\n"
       "       0 - Test speed of Legendre to Chebyshev transform\n"
       "       1 - Test speed of Chebyshev to Legendre transform\n"

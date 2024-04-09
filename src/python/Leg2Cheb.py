@@ -175,10 +175,10 @@ if __name__ == '__main__':
     binom = False
     L2C = Leg2Cheb(u, M=18, lagrange=True)
     C2L = Cheb2Leg(u, M=18, lagrange=True)
-    #a1 = L2C(u, binom=binom)
-    #a2 = C2L(a1, binom=binom)
+    a1 = L2C(u, binom=binom)
+    a2 = C2L(a1, binom=binom)
     b1 = L2C(u, lagrange=True, binom=binom)
-    #b2 = C2L(b1, lagrange=True, binom=binom)
+    b2 = C2L(b1, lagrange=True, binom=binom)
 
     error_f = np.linalg.norm(a2-u, np.inf)
     error_fl = np.linalg.norm(b2-u, np.inf)
