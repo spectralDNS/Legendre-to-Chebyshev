@@ -532,11 +532,11 @@ size_t directM(const double *input_array, double *output_array,
         const double *up = &input_array[(i0 + n) * strides];
         if (n < h) {
           for (i = 0; i < h; i++) {
-            vp[i*strides] += a0 * ap[i] * up[i*strides];
+            vp[i * strides] += a0 * ap[i] * up[i * strides];
           }
         } else {
           for (i = 0; i < 2 * h - n; i++) {
-            vp[i*strides] += a0 * ap[i] * up[i*strides];
+            vp[i * strides] += a0 * ap[i] * up[i * strides];
           }
         }
       }
@@ -551,7 +551,7 @@ size_t directM(const double *input_array, double *output_array,
     const double a0 = a[n];
     const double *cp = &input_array[(i0 + 2 * n) * strides];
     double *op = &output_array[i0 * strides];
-    if ((int)N-(2*n+i0) <= 0)
+    if ((int)N - (2 * n + i0) <= 0)
       break;
     if (strides == 1) {
       for (int i = 0; i < N - (2 * n + i0); i++) {
@@ -559,7 +559,7 @@ size_t directM(const double *input_array, double *output_array,
       }
     } else {
       for (int i = 0; i < N - (2 * n + i0); i++) {
-        op[i*strides] += a0 * ap[i] * cp[i*strides];
+        op[i * strides] += a0 * ap[i] * cp[i * strides];
       }
     }
     flops += (N - (2 * n + i0)) * 3;
@@ -695,15 +695,28 @@ size_t directL(const double *input, double *output_array, fmm_plan *fmmplan,
       if (strides == 1) {
         double *vp = &output_array[i0];
         const double *ia = &input[i0 + n];
-        for (i = 0; i < lmin(h, 2 * h - n); i++) {
-          (*vp++) -= d0 * (*ia++) * (*ap++);
+        if (n < h) {
+          for (i = 0; i < h; i++) {
+            (*vp++) -= d0 * (*ia++) * (*ap++);
+          }
+        } else {
+          for (i = 0; i < 2 * h - n; i++) {
+            (*vp++) -= d0 * (*ia++) * (*ap++);
+          }
         }
       } else {
         double *vp = &output_array[i0 * strides];
         const double *ia = &input[i0 + n];
-        for (i = 0; i < lmin(h, 2 * h - n); i++) {
-          (*vp) -= d0 * (*ia++) * (*ap++);
-          vp += strides;
+        if (n < h) {
+          for (i = 0; i < h; i++) {
+            (*vp) -= d0 * (*ia++) * (*ap++);
+            vp += strides;
+          }
+        } else {
+          for (i = 0; i < 2 * h - n; i++) {
+            (*vp) -= d0 * (*ia++) * (*ap++);
+            vp += strides;
+          }
         }
       }
       flops += i * 3;
