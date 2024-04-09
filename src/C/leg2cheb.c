@@ -518,16 +518,26 @@ size_t directM(const double *input_array, double *output_array,
       if (strides == 1) {
         double *vp = &output_array[i0];
         const double *up = &input_array[i0 + n];
-        for (i = 0; i < lmin(h, 2 * h - n); i++) {
-          (*vp++) += a0 * (*ap++) * (*up++);
+        if (n < h) {
+          for (i = 0; i < h; i++) {
+            vp[i] += a0 * ap[i] * up[i];
+          }
+        } else {
+          for (i = 0; i < 2 * h - n; i++) {
+            vp[i] += a0 * ap[i] * up[i];
+          }
         }
       } else {
         double *vp = &output_array[i0 * strides];
         const double *up = &input_array[(i0 + n) * strides];
-        for (i = 0; i < lmin(h, 2 * h - n); i++) {
-          (*vp) += a0 * (*ap++) * (*up);
-          vp += strides;
-          up += strides;
+        if (n < h) {
+          for (i = 0; i < h; i++) {
+            vp[i*strides] += a0 * ap[i] * up[i*strides];
+          }
+        } else {
+          for (i = 0; i < 2 * h - n; i++) {
+            vp[i*strides] += a0 * ap[i] * up[i*strides];
+          }
         }
       }
       flops += i * 3;
@@ -541,98 +551,98 @@ size_t directM(const double *input_array, double *output_array,
     const double a0 = a[n];
     const double *cp = &input_array[(i0 + 2 * n) * strides];
     double *op = &output_array[i0 * strides];
+    if ((int)N-(2*n+i0) <= 0)
+      break;
     if (strides == 1) {
-      for (size_t i = i0; i < N - 2 * n; i++) {
-        (*op++) += a0 * (*ap++) * (*cp++);
+      for (int i = 0; i < N - (2 * n + i0); i++) {
+        op[i] += a0 * ap[i] * cp[i];
       }
     } else {
-      for (size_t i = i0; i < N - 2 * n; i++) {
-        (*op) += a0 * (*ap++) * (*cp);
-        op += strides;
-        cp += strides;
+      for (int i = 0; i < N - (2 * n + i0); i++) {
+        op[i*strides] += a0 * ap[i] * cp[i*strides];
       }
     }
     flops += (N - (2 * n + i0)) * 3;
   }
 
-///////////
-/*
-  for (size_t block = 0; block < nL - 1; block++) {
-    size_t i0 = block * h;
-    for (size_t n = 0; n < h; n = n + 2) {
-      const size_t n1 = n / 2;
-      const double *ap = &a[i0 + n1];
-      const double a0 = a[n1];
+  ///////////
+  /*
+    for (size_t block = 0; block < nL - 1; block++) {
+      size_t i0 = block * h;
+      for (size_t n = 0; n < h; n = n + 2) {
+        const size_t n1 = n / 2;
+        const double *ap = &a[i0 + n1];
+        const double a0 = a[n1];
+        if (strides == 1) {
+          double *vp = &output_array[i0];
+          const double *up = &input_array[i0 + n];
+          for (size_t i = 0; i < h; i++) {
+            (*vp++) += a0 * (*ap++) * (*up++);
+          }
+        } else {
+          double *vp = &output_array[i0 * strides];
+          const double *up = &input_array[(i0 + n) * strides];
+          for (size_t i = 0; i < h; i++) {
+            (*vp) += a0 * (*ap++) * (*up);
+            vp += strides;
+            up += strides;
+          }
+        }
+        flops += h * 3;
+      }
+    }
+
+    // Last two blocks
+    size_t i0 = (nL - 1) * h;
+    for (size_t n = 0; n < s; n++) {
+      const double *ap = &a[n + i0];
+      const double a0 = a[n];
+      const double *cp = &input_array[(i0 + 2 * n) * strides];
+      double *op = &output_array[i0 * strides];
       if (strides == 1) {
-        double *vp = &output_array[i0];
-        const double *up = &input_array[i0 + n];
-        for (size_t i = 0; i < h; i++) {
-          (*vp++) += a0 * (*ap++) * (*up++);
+        for (size_t i = i0; i < N - 2 * n; i++) {
+          (*op++) += a0 * (*ap++) * (*cp++);
         }
       } else {
-        double *vp = &output_array[i0 * strides];
-        const double *up = &input_array[(i0 + n) * strides];
-        for (size_t i = 0; i < h; i++) {
-          (*vp) += a0 * (*ap++) * (*up);
-          vp += strides;
-          up += strides;
+        for (size_t i = i0; i < N - 2 * n; i++) {
+          (*op) += a0 * (*ap++) * (*cp);
+          op += strides;
+          cp += strides;
         }
       }
-      flops += h * 3;
+      flops += (N - (2 * n + i0)) * 3;
     }
-  }
 
-  // Last two blocks
-  size_t i0 = (nL - 1) * h;
-  for (size_t n = 0; n < s; n++) {
-    const double *ap = &a[n + i0];
-    const double a0 = a[n];
-    const double *cp = &input_array[(i0 + 2 * n) * strides];
-    double *op = &output_array[i0 * strides];
-    if (strides == 1) {
-      for (size_t i = i0; i < N - 2 * n; i++) {
-        (*op++) += a0 * (*ap++) * (*cp++);
-      }
-    } else {
-      for (size_t i = i0; i < N - 2 * n; i++) {
-        (*op) += a0 * (*ap++) * (*cp);
-        op += strides;
-        cp += strides;
+    for (size_t block = 0; block < nL; block++) {
+      size_t i0 = block * h;
+      size_t j0 = h + i0;
+      const long Nm = lmin(N - j0, h);
+      for (size_t n = 0; n < h; n = n + 2) {
+        if ((long)(Nm - n) < 0)
+          break;
+        const size_t n1 = (n + h) / 2;
+        const double *ap = &a[i0 + n1];
+        const double a0 = a[n1];
+        if (strides == 1) {
+          double *vp = &output_array[i0];
+          const double *up = &input_array[j0 + n];
+          for (size_t i = 0; i < (size_t)(Nm - n); i++) {
+            (*vp++) += a0 * (*ap++) * (*up++);
+          }
+        } else {
+          double *vp = &output_array[i0 * strides];
+          const double *up = &input_array[(j0 + n) * strides];
+          for (size_t i = 0; i < (size_t)(Nm - n); i++) {
+            (*vp) += a0 * (*ap++) * (*up);
+            vp += strides;
+            up += strides;
+          }
+        }
+        flops += 3 * (Nm - n);
       }
     }
-    flops += (N - (2 * n + i0)) * 3;
-  }
-
-  for (size_t block = 0; block < nL; block++) {
-    size_t i0 = block * h;
-    size_t j0 = h + i0;
-    const long Nm = lmin(N - j0, h);
-    for (size_t n = 0; n < h; n = n + 2) {
-      if ((long)(Nm - n) < 0)
-        break;
-      const size_t n1 = (n + h) / 2;
-      const double *ap = &a[i0 + n1];
-      const double a0 = a[n1];
-      if (strides == 1) {
-        double *vp = &output_array[i0];
-        const double *up = &input_array[j0 + n];
-        for (size_t i = 0; i < (size_t)(Nm - n); i++) {
-          (*vp++) += a0 * (*ap++) * (*up++);
-        }
-      } else {
-        double *vp = &output_array[i0 * strides];
-        const double *up = &input_array[(j0 + n) * strides];
-        for (size_t i = 0; i < (size_t)(Nm - n); i++) {
-          (*vp) += a0 * (*ap++) * (*up);
-          vp += strides;
-          up += strides;
-        }
-      }
-      flops += 3 * (Nm - n);
-    }
-  }
-*/
-///////
+  */
+  ///////
 
   double *op = &output_array[0];
   if (strides == 1) {
@@ -955,38 +965,40 @@ direct_plan *create_direct(size_t N, size_t direction) {
   for (size_t i = 0; i < N0; i++) // Integer, precomputed values
     a[i] = _LambdaI(i);
   size_t DN = 8;
-  //size_t maxulp = 0;
-  //double maxabs = 0.0;
-  //double maxrel = 0.0;
+  // size_t maxulp = 0;
+  // double maxabs = 0.0;
+  // double maxrel = 0.0;
   for (size_t i = N0; i < N; i += DN) {
     a[i] = _LambdaI(i);
-    //printf("i %d %d\n", i, maxulp);
+    // printf("i %d %d\n", i, maxulp);
     size_t J0 = (size_t)i + DN < N ? (size_t)i + DN : N;
     for (size_t j = i + 1; j < J0; j++) {
       a[j] = a[j - 1] * (1 - 0.5 / j);
       // a[j] = ((j << 1) -1) * a[j - 1] / (j << 1) ;
-      //a[j] = a[j - 1] - 0.5 * a[j - 1] / j;
+      // a[j] = a[j - 1] - 0.5 * a[j - 1] / j;
 
-      //double s0 = _LambdaI(j);
-      //int ulp = (int)((a[j] - s0) / (nexttoward(a[j], 10) - a[j]));
-      //maxulp = (abs(ulp) > maxulp) ? abs(ulp) : maxulp;
-      //maxabs = (fabs(a[j] - s0) > maxabs) ? (fabs(a[j] - s0)) : maxabs;
-      //maxrel =
-      //    (fabs((a[j] - s0) / s0) > maxrel) ? (fabs((a[j] - s0) / s0)) : maxrel;
-      //printf("%d  %2.16e  %2.16e %2.16e %2.16e %d %d \n", j, a[j], s0,
-      //        fabs(a[j] - s0), fabs((a[j] - s0) / s0), ulp, maxulp);
+      // double s0 = _LambdaI(j);
+      // int ulp = (int)((a[j] - s0) / (nexttoward(a[j], 10) - a[j]));
+      // maxulp = (abs(ulp) > maxulp) ? abs(ulp) : maxulp;
+      // maxabs = (fabs(a[j] - s0) > maxabs) ? (fabs(a[j] - s0)) : maxabs;
+      // maxrel =
+      //     (fabs((a[j] - s0) / s0) > maxrel) ? (fabs((a[j] - s0) / s0)) :
+      //     maxrel;
+      // printf("%d  %2.16e  %2.16e %2.16e %2.16e %d %d \n", j, a[j], s0,
+      //         fabs(a[j] - s0), fabs((a[j] - s0) / s0), ulp, maxulp);
     }
   }
-  //printf("%2.16e %2.16e %d  \n", maxrel, maxabs, maxulp);
+  // printf("%2.16e %2.16e %d  \n", maxrel, maxabs, maxulp);
 
   dplan->a = a;
   if (direction == C2L | direction == BOTH) {
     double *dn = (double *)fftw_malloc((N + 1) / 2 * sizeof(double));
     double *an = (double *)fftw_malloc(N * sizeof(double));
     dn[0] = 0;
-    an[0] = M_2_SQRTPI; //0.88622692545275801364908374167e0;
+    an[0] = M_2_SQRTPI; // 0.88622692545275801364908374167e0;
     for (size_t i = 1; i < N; i++) {
-      an[i] = 1 /(a[i] * (2 * i * i + i)); // Using _Lambda(i-0.5) = 1/(i*_Lambda(i))
+      an[i] = 1 / (a[i] *
+                   (2 * i * i + i)); // Using _Lambda(i-0.5) = 1/(i*_Lambda(i))
     }
     for (size_t i = 1; i < (N + 1) / 2; i++)
       dn[i] = a[i - 1] / (2 * i);
@@ -1130,7 +1142,7 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
                 if (di == 0 && block == 0 && p == 0) {
                   if (j < M - i) { // Persymmetric Lambda((y-x)/2)
                     double m0 = _Lambda((y - x) / 2);
-                    //double m0 = _LambdaE((y - x) / 2);
+                    // double m0 = _LambdaE((y - x) / 2);
                     f00[ix] = m0;
                     f00[MM - xi - 1] = m0;
                   }
@@ -1138,7 +1150,7 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
                 if (di == 0) {
                   if (j >= i) { // Symmetric Lambda((x+y)/2)
                     double m1 = _Lambda((x + y) / 2);
-                    //double m1 = _LambdaE((x + y) / 2);
+                    // double m1 = _LambdaE((x + y) / 2);
                     fx1[ix] = m1;
                     fx1[xi] = m1;
                   }
@@ -1148,8 +1160,8 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
                 } else {
                   //(*ff++) = -2 * (fpq[ix] / fx1[ix]) /
                   //          ((y - x - 1) * (x + y) * (x + y + 1));
-                  (*ff++) = -2 * (fpq[ix] /
-                            (fx1[ix] * (x + y) * (x + y + 1) * (y - x - 1)));
+                  (*ff++) = -2 * (fpq[ix] / (fx1[ix] * (x + y) * (x + y + 1) *
+                                             (y - x - 1)));
                 }
               }
             }

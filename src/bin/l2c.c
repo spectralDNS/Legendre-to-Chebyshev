@@ -377,12 +377,14 @@ void test_forward_backward_2d(size_t N0, size_t N1, size_t maxs,
   double *output_array = (double *)calloc(N0 * N1, sizeof(double));
   double *output_array2 = (double *)calloc(N0 * N1, sizeof(double));
 
+  srand48(1);
+
   int axis = -1;
   fmm_plan_2d *fmmplan2d = create_fmm_2d(N0, N1, axis, maxs, 18, 2, 0, verbose);
   // Initialize some input array
   for (size_t i = 0; i < N0; i++) {
     for (size_t j = 0; j < N1; j++) {
-      input_array[i * N1 + j] = 1.0;
+      input_array[i * N1 + j] = 2 * drand48() - 1;
     }
   }
 
