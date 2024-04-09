@@ -5,7 +5,7 @@ l2c = executable('l2c',
                  include_directories : '../C/',
                  dependencies : deps,
                  install : true,
-                 #c_args : ['-march=native'],
+                 c_args : ['-march=native'],
                  install_rpath : lib_dir,
                  link_with : l2clib)
 
