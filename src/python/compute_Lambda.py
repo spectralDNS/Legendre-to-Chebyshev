@@ -55,38 +55,14 @@ def taux(x, nx=7):
 def lamx(x, nx=7):
     return taux(x, nx) / mp.sqrt(x+q)
 
-def lambN1(x):
-    return np.exp(scipy.special.loggamma(x + 0.5) - scipy.special.loggamma(x+1)) * np.sqrt(x)
-
-def lambN2(x):
-    return np.exp(scipy.special.loggamma(x + 0.25) - scipy.special.loggamma(x+0.75)) * np.sqrt(x)
-
-def lambHH(x):
-    return mp.gamma(1/x+mp.mpf('1/4')) / mp.gamma(1/x+mp.mpf('3/4')) / mp.sqrt(x)
-
-def lambs(x):
-    return mp.gamma(1/(x+q)+mp.mpf('1/2')) / mp.gamma(1/(x+q)+1) / mp.sqrt(x+q)
-
-def lambHH(x):
-    return mp.gamma(1/x+mp.mpf('1/4')) / mp.gamma(1/x+mp.mpf('3/4')) / mp.sqrt(x)
-
-def lambH(x):
-    return mp.gamma(x+mp.mpf('1/4')) / mp.gamma(x+mpf('3/4'))
-
 def lamb(x):
     return mp.gamma(x+mp.mpf('1/2')) / mp.gamma(x+1)
 
 def lambi(x, a):
     return mp.sqrt(2*a/(x+1)) * mp.gamma(2*a/(x+1)+mp.mpf('1/2')) / mp.gamma(2*a/(x+1)+1)
 
-def lambiH(x, a):
-    return mp.sqrt(2*a/(x+1)) * mp.gamma(2*a/(x+1)+mp.mpf('1/4')) / mp.gamma(2*a/(x+1)+mp.mpf('3/4'))
-
 def lambiG(x, a):
     return mp.sqrt(mp.sqrt(2*a**2/(x+1))) * mp.gamma(mp.sqrt(2*a**2/(x+1))+mp.mpf('1/4')) / mp.gamma(mp.sqrt(2*a**2/(x+1))+mp.mpf('3/4'))
-
-def lambiE(x, a):
-    return mp.gamma(mp.sqrt(2/(x+1))*a+mp.mpf('1/2')) / mp.gamma(mp.sqrt(2/(x+1))*a+1)
 
 def chebquad(N, a, nx=8, fun=lambi):
     xj = lambda k, N: mp.cos(mp.pi*(2*k+1)/(2*N))
@@ -117,16 +93,6 @@ def chebval(x, c):
             c1 = tmp + c1*x2
     return c0 + c1*x
 
-def curve(x, a):
-    return 10 + a / np.log2(x)
-
-#def lambC(x, a=64, nx=8):
-#    c = chebquad(10, a, nx)
-#    return chebval(-1+2*a/x, np.array(c).astype(float))/np.sqrt(x)
-
-def lambC(x, a=64, nx=8):
-    c = chebquad(10, a, nx)
-    return [chebval(-1+2*a/i, c) / mp.sqrt(i) for i in x]
 
 def lambG(x, a=64, nx=8):
     c = chebquad(10, a, nx, lambiG)
@@ -151,10 +117,6 @@ dff = lambda x, nx: float(lamxf(float(x), nx) - lamb(x))
 
 #np.savetxt(f"Lambdavals{M}.dat", np.array(a[:8]).astype(float), fmt="%.16e", delimiter=',', newline=',')
 #np.savetxt(f"Lambdavals{M}C.dat", np.array(chebquad(20, M)).astype(float), fmt="%.16e", delimiter=',', newline=',')
-
-#L = []
-#for i in range(64):
-#    L.append(lamb(i))
 
 F = lambda x, nx: mp.log10(mp.absmax(lamx(x, nx)-lamb(x)))-mp.log10(math.nextafter(lamxf(2000), 1e8)-lamxf(2000))
 #F = lambda x, nx: mp.log10(mp.absmax((lamx(x, nx)-lamb(x))/lamb(x)))-mp.log10(2.22e-16)
