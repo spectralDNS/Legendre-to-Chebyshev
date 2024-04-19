@@ -753,8 +753,8 @@ direct_plan *create_direct(size_t N, size_t direction, size_t precompute) {
   dplan->lb = NULL;
 
   if (precompute == 1) {
-    dplan->lf = (double *)fftw_malloc((N * N + 1) / 2 * sizeof(double));
-    dplan->lb = (double *)fftw_malloc((N * N + 1) / 2 * sizeof(double));
+    dplan->lf = (double *)fftw_malloc((N * N + N) / 2 * sizeof(double));
+    dplan->lb = (double *)fftw_malloc((N * N + N) / 2 * sizeof(double));
     double *dlf = &dplan->lf[0];
     for (size_t n = 0; n < N; n = n + 2) {
       const double *ap = &dplan->a[n / 2];
