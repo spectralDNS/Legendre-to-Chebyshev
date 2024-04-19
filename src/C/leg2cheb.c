@@ -732,7 +732,7 @@ direct_plan *create_direct(size_t N, size_t direction, size_t precompute) {
   // printf("%2.16e %2.16e %d  \n", maxrel, maxabs, maxulp);
 
   dplan->a = a;
-  if (direction == C2L | direction == BOTH) {
+  if ((direction == C2L) | (direction == BOTH)) {
     double *dn = (double *)fftw_malloc((N + 1) / 2 * sizeof(double));
     double *an = (double *)fftw_malloc(N * sizeof(double));
     dn[0] = 0;
@@ -1230,7 +1230,7 @@ size_t execute(const double *input_array, double *output_array,
   double *A = fmmplan->A[direction];
   size_t flops = 0;
   size_t lagrange = fmmplan->lagrange;
-  assert(direction == C2L | direction == L2C);
+  assert((direction == C2L) | (direction == L2C));
 
   if (T == NULL) {
     flops =
