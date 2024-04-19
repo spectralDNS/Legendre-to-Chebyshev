@@ -154,12 +154,12 @@ void get_ij(size_t *ij, const size_t level, const size_t block, const size_t s,
 size_t direct(const double *u, double *b, direct_plan *dplan, size_t direction,
               size_t strides) {
   size_t flops = 0;
-  const double sqrt_pi = 1.77245385090551602729816e0;
+  const double sqrt_pi = 1.77245385090551602e0;
   const size_t N = dplan->N;
   for (size_t i = 0; i < N; i++)
     b[i] = 0.0;
   flops += N;
-  if (dplan->lf == NULL) {
+  //if (dplan->lf == NULL) {
     if (direction == L2C) {
       const double *a = dplan->a;
       for (size_t n = 0; n < N; n = n + 2) {
@@ -172,7 +172,6 @@ size_t direct(const double *u, double *b, direct_plan *dplan, size_t direction,
         flops += 3 * (N - n);
       }
       b[0] /= 2;
-
       flops += N;
     } else {
       double *vn = (double *)fftw_malloc(N * sizeof(double));
@@ -197,7 +196,7 @@ size_t direct(const double *u, double *b, direct_plan *dplan, size_t direction,
       flops += N;
       fftw_free(vn);
     }
-  } else {
+  /*} else {
     if (direction == L2C) {
       const double *ap = &dplan->lf[0];
       for (size_t n = 0; n < N; n = n + 2) {
@@ -232,7 +231,7 @@ size_t direct(const double *u, double *b, direct_plan *dplan, size_t direction,
       flops += N;
       fftw_free(vn);
     }
-  }
+  */}
   return flops;
 }
 
@@ -698,10 +697,13 @@ void free_fmm(fmm_plan *plan) {
 
 direct_plan *create_direct(size_t N, size_t direction, size_t precompute) {
   direct_plan *dplan = (direct_plan *)fftw_malloc(sizeof(direct_plan));
-  dplan->a = NULL;
+  double *a = (double *)fftw_malloc(N * sizeof(double));
+  dplan->a = a;
   dplan->an = NULL;
   dplan->dn = NULL;
-  double *a = (double *)fftw_malloc(N * sizeof(double));
+  dplan->lf = NULL;
+  dplan->lb = NULL;
+
   size_t N0 = 256 < N ? 256 : N;
   for (size_t i = 0; i < N0; i++) // Integer, precomputed values
     a[i] = LambdaI(i);
@@ -712,7 +714,7 @@ direct_plan *create_direct(size_t N, size_t direction, size_t precompute) {
   for (size_t i = N0; i < N; i += DN) {
     a[i] = LambdaI(i);
     // printf("i %d %d\n", i, maxulp);
-    size_t J0 = (size_t)i + DN < N ? (size_t)i + DN : N;
+    size_t J0 = i + DN < N ? i + DN : N;
     for (size_t j = i + 1; j < J0; j++) {
       // a[j] = a[j - 1] * (1 - 0.5 / j);
       // a[j] = ((j << 1) -1) * a[j - 1] / (j << 1) ;
@@ -731,7 +733,6 @@ direct_plan *create_direct(size_t N, size_t direction, size_t precompute) {
   }
   // printf("%2.16e %2.16e %d  \n", maxrel, maxabs, maxulp);
 
-  dplan->a = a;
   if ((direction == C2L) | (direction == BOTH)) {
     double *dn = (double *)fftw_malloc((N + 1) / 2 * sizeof(double));
     double *an = (double *)fftw_malloc(N * sizeof(double));
@@ -749,8 +750,6 @@ direct_plan *create_direct(size_t N, size_t direction, size_t precompute) {
   }
   dplan->direction = direction;
   dplan->N = N;
-  dplan->lf = NULL;
-  dplan->lb = NULL;
 
   if (precompute == 1) {
     dplan->lf = (double *)fftw_malloc((N * N + N) / 2 * sizeof(double));
