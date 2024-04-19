@@ -808,6 +808,7 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
   fmmplan->wk = NULL;
   fmmplan->ck = NULL;
   fmmplan->dplan = NULL;
+  fmmplan->ll = NULL;
   fmmplan->lagrange = lagrange;
 
   int L = ceil(log2((double)N / (double)maxs)) - 2;
@@ -1067,11 +1068,10 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
   }
 
   //////////
-  double **ll = NULL;
   if (precompute == 1) {
     size_t h = 2 * s;
     size_t nL = N / h;
-    ll = (double **)fftw_malloc(nL * sizeof(double *));
+    double **ll = (double **)fftw_malloc(nL * sizeof(double *));
     ll[0] = (double *)fftw_malloc(nL * (3 * s * s + s) * sizeof(double));
     for (size_t block = 1; block < nL; block++) {
       ll[block] = ll[block - 1] + 3 * s * s + s;
@@ -1108,8 +1108,8 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
         (*lb++) = a0 * ap[i];
       }
     }
+    fmmplan->ll = ll;
   }
-  fmmplan->ll = ll;
   //////////
 
   double *ia = (double *)fftw_malloc(Nn / 2 * sizeof(double));
