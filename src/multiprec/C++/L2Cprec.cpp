@@ -68,7 +68,7 @@ template <class T> void cheb2leg(T *u, T *b, size_t N) {
   free(un);
 }
 
-double test_accuracy_C(size_t N, double m, size_t direction, size_t norm, size_t random, size_t lagrange) {
+void test_accuracy_C(size_t N, double m, size_t direction, size_t norm, size_t random) {
 
   //typedef boost::multiprecision::cpp_dec_float_100 T;
   //typedef boost::multiprecision::cpp_dec_float_50 T;
@@ -102,45 +102,64 @@ double test_accuracy_C(size_t N, double m, size_t direction, size_t norm, size_t
     break;
   }
 
-  fmm_plan *fmmplan = create_fmm(N, 64, 18, direction, lagrange, 1);
-
   double *input_array = (double *)calloc(N, sizeof(double));
-  double *output_array = (double *)calloc(N, sizeof(double));
+  double *output_arrayM = (double *)calloc(N, sizeof(double));
+  double *output_arrayN = (double *)calloc(N, sizeof(double));
+
+  fmm_plan *fmmplanM = create_fmm(N, 64, 18, direction, 0, 0, 1);
+  fmm_plan *fmmplanN = create_fmm(N, 64, 18, direction, 1, 0, 1);
+
   for (size_t i = 0; i < N; i++)
     input_array[i] = (double)u[i];
-  size_t flops = execute(input_array, output_array, fmmplan, direction, 1);
 
-  double error = 0;
+  size_t flopsM = execute(input_array, output_arrayM, fmmplanM, direction, 1);
+  size_t flopsN = execute(input_array, output_arrayN, fmmplanN, direction, 1);
+
+  double errorM = 0;
+  double errorN = 0;
+  double max_output;
+  double ulp;
   switch (norm)
   {
   case 0: // L2 norm
     {
-      for (size_t i = 0; i < N; i++)
-        error += pow(output_array[i] - (double)b[i], 2);
-      error = sqrt(error);
+      for (size_t i = 0; i < N; i++) {
+        errorM += pow(output_arrayM[i] - (double)b[i], 2);
+        errorN += pow(output_arrayN[i] - (double)b[i], 2);
+      }
+      errorM = sqrt(errorM);
+      errorN = sqrt(errorN);
     }
     break;
 
   case 1: // inf norm
     {
-      for (size_t i = 0; i < N; i++)
-        error = fmax(fabs(output_array[i] - (double)b[i]), error);
-      double e0 = 0;
+      max_output = 0;
+      for (size_t i = 0; i < N; i++) {
+        max_output = fmax((double)b[i], max_output);
+      }
+      ulp = nextafter(max_output, 1e8) - max_output;
 
-      for (size_t i = 0; i < N; i++)
-        e0 = fmax(fabs(output_array[i]), e0);
-      error /= e0;
+      for (size_t i = 0; i < N; i++) {
+        errorM = fmax(fabs(output_arrayM[i] - (double)b[i]), errorM);
+        errorN = fmax(fabs(output_arrayN[i] - (double)b[i]), errorN);
+        //std::cout << std::setprecision(16) << errorM << " " << fabs(output_arrayM[i] - (double)b[i]) << " " << (double)b[i] <<  " " << ulp << " " << errorM/ulp << std::endl;
+      }
+      errorM /= max_output;
+      errorN /= max_output;
     }
   default:
     break;
   }
   free(input_array);
-  free(output_array);
+  free(output_arrayM);
+  free(output_arrayN);
   free(u);
   free(b);
-  std::cout << std::setprecision(16) << error << std::endl;
 
-  return error;
+  std::cout << std::setprecision(16) << errorM*max_output << " " << errorM*max_output / ulp << " " << errorN*max_output << " " << errorN*max_output / ulp  << " " << ulp  << std::endl;
+  //std::cout << nextafter(1.0, 1e8)-1.0 << " " << nextafter(2.0, 1e8) -2.0 << " " << nextafter(4.0, 1e8) - 4.0 << std::endl;
+  return;
 }
 
 void test_accuracy(size_t N, size_t m) {
@@ -172,10 +191,9 @@ int main(int argc, char *argv[]) {
   size_t d = 0;
   size_t n = 0;
   size_t R = 0;
-  size_t l = 0;
   double m = 0.0;
   int opt;
-  while ((opt = getopt(argc, argv, ":N:m::a::d::n::R::l::")) != -1) {
+  while ((opt = getopt(argc, argv, ":N:m::a::d::n::R::")) != -1) {
     switch (opt) {
     case 'N':
       N = atoi(optarg);
@@ -195,9 +213,6 @@ int main(int argc, char *argv[]) {
     case 'R':
       R = atoi(optarg);
       break;
-    case 'l':
-      l = atoi(optarg);
-      break;
     default:
       exit(-1);
     }
@@ -209,7 +224,7 @@ int main(int argc, char *argv[]) {
     break;
 
   case 1:
-    test_accuracy_C(N, m, d, n, R, l);
+    test_accuracy_C(N, m, d, n, R);
     break;
 
   default:

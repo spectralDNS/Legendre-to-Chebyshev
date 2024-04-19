@@ -46,17 +46,20 @@ cdef class Leg2Cheb:
         l2c.fmm_plan* plan
         size_t N
         size_t direction
+        size_t lagrange
+        size_t precompute
         size_t verbose
         np.ndarray _input_array
         np.ndarray _output_array
 
     def __cinit__(self, input_array : np.ndarray, output_array : np.ndarray,
                   M : size_t=18, maxs : size_t=36, direction : size_t=BOTH,
-                  lagrange : size_t=0, verbose : size_t=1):
+                  lagrange : size_t=0, precompute : size_t=0, verbose : size_t=1):
         self.N = input_array.shape[0]
         self.direction = direction
+        self.precompute = precompute
         self.verbose = verbose
-        self.plan = <l2c.fmm_plan*>l2c.create_fmm(self.N, maxs, M, direction, lagrange, verbose)
+        self.plan = <l2c.fmm_plan*>l2c.create_fmm(self.N, maxs, M, direction, lagrange, precompute, verbose)
         self._input_array = input_array
         self._output_array = output_array
 
@@ -123,7 +126,7 @@ cpdef np.ndarray leg2cheb(input_array : np.ndarray, output_array : np.ndarray):
     output_array : array
 
     """
-    cdef l2c.direct_plan* plan = <l2c.direct_plan*>l2c.create_direct(input_array.shape[0], L2C)
+    cdef l2c.direct_plan* plan = <l2c.direct_plan*>l2c.create_direct(input_array.shape[0], L2C, 0)
     l2c.direct(<double*>np.PyArray_DATA(input_array),
                <double*>np.PyArray_DATA(output_array),
                plan, L2C, 1)
@@ -143,14 +146,14 @@ cpdef np.ndarray cheb2leg(input_array : np.ndarray, output_array : np.ndarray):
     output_array : array
 
     """
-    cdef l2c.direct_plan* plan = <l2c.direct_plan*>l2c.create_direct(input_array.shape[0], C2L)
+    cdef l2c.direct_plan* plan = <l2c.direct_plan*>l2c.create_direct(input_array.shape[0], C2L, 0)
     l2c.direct(<double*>np.PyArray_DATA(input_array),
                <double*>np.PyArray_DATA(output_array),
                plan, C2L, 1)
     free_direct(<l2c.direct_plan>plan)
     return output_array
 
-def Lambda(np.ndarray x):
+def Lambdav(np.ndarray x):
     """Return
 
     .. math::
@@ -166,5 +169,5 @@ def Lambda(np.ndarray x):
     cdef:
         size_t N = np.PyArray_Ravel(x, np.NPY_CORDER).shape[0]
         np.ndarray[double, ndim=1] a = np.empty(N)
-    l2c.__Lambda(<double*>np.PyArray_DATA(x), <double*>np.PyArray_DATA(a), N)
+    l2c.Lambdavec(<double*>np.PyArray_DATA(x), <double*>np.PyArray_DATA(a), N)
     return np.PyArray_Reshape(a, np.shape(x))

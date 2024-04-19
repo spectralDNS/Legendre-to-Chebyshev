@@ -1,13 +1,13 @@
 import numpy as np
-from l2c import Lambda
+from l2c import Lambdav
 from mpi4py_fft import fftw
 from numpy.polynomial.chebyshev import chebvander
 from scipy.interpolate import BarycentricInterpolator
 import numba as nb
 from binommat import BM
 
-Mxy = lambda x, y: Lambda((y-x)/2)*Lambda((y+x)/2)
-Lxy = lambda x, y: -1/(x+y+1)/(y-x)*Lambda((y-x-2)/2)*Lambda((y+x-1)/2)
+Mxy = lambda x, y: Lambdav((y-x)/2)*Lambdav((y+x)/2)
+Lxy = lambda x, y: -1/(x+y+1)/(y-x)*Lambdav((y-x-2)/2)*Lambdav((y+x-1)/2)
 
 class Leg2Cheb:
     def __init__(self, input_array, M=18, s=64, fun=Mxy, lagrange=False):
@@ -18,7 +18,7 @@ class Leg2Cheb:
         self.h = 2**(L-np.arange(L)-1)
         self.s = s = np.ceil(N/2**(L+2)).astype(int)
         self.N = s*2**(L+2)
-        self.a = Lambda(np.arange(self.N, dtype='d'))
+        self.a = Lambdav(np.arange(self.N, dtype='d'))
         self.fun = fun
         self.T, self.A, self.TT = [], [], None
         self.lagrange = lagrange
@@ -134,8 +134,8 @@ class Cheb2Leg(Leg2Cheb):
         Leg2Cheb.__init__(self, input_array, M=M, fun=Lxy, lagrange=lagrange)
         k = np.arange(self.N, dtype='d')
         k[0] = 1
-        self.dn = Lambda((k[::2]-2)/2)/k[::2]
-        self.a = 1/(2*Lambda(k)*k*(k+0.5))
+        self.dn = Lambdav((k[::2]-2)/2)/k[::2]
+        self.a = 1/(2*Lambdav(k)*k*(k+0.5))
         self.a[0] = 2/np.sqrt(np.pi)
         self.dn[0] = 0
 

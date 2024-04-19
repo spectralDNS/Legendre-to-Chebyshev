@@ -9,20 +9,21 @@ cy = meson.get_compiler('cython')
 cpp = meson.get_compiler('cpp')
 cython = find_program(cy.cmd_array()[0])
 
+
 cblas = dependency('openblas')
 fftw = dependency('fftw3')
 omp = dependency('openmp', required : false)
 deps = [cblas, fftw, omp]
-#add_global_arguments(['-march=native'], language : 'c')
+#add_global_arguments(['-march=native', '-Ofast'], language : 'c')
 add_global_arguments(['-fomit-frame-pointer'], language : 'c')
 add_global_link_arguments(['-lm'], language : 'c')
+
 #add_global_link_arguments(['-framework', 'Accelerate'], language : 'c')
 add_global_arguments('-std=c++14', language : 'cpp')
 if omp.found()
   add_global_arguments(['-DOMP'], language : 'c')
 endif
 
-#subdir('simd')
 subdir('C')
 subdir('cython')
 subdir('ctypes')

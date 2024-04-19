@@ -8,10 +8,10 @@ size_t max(size_t a, size_t b) { return (a > b) ? a : b; }
 double fmax(double a, double b) { return (a > b) ? a : b; }
 
 void test_forward_backward(size_t N, size_t maxs, size_t M, double m,
-                           size_t random, size_t lagrange, size_t verbose) {
+                           size_t random, size_t lagrange, size_t precompute, size_t verbose) {
   if (verbose > 1)
     printf("test_forward_backward\n");
-  fmm_plan *fmmplan = create_fmm(N, maxs, M, BOTH, lagrange, verbose);
+  fmm_plan *fmmplan = create_fmm(N, maxs, M, BOTH, lagrange, precompute, verbose);
   double *input_array = (double *)calloc(N, sizeof(double));
   double *output_array = (double *)calloc(N, sizeof(double));
 
@@ -46,8 +46,12 @@ void test_forward_backward(size_t N, size_t maxs, size_t M, double m,
   for (size_t j = 0; j < N; j++)
     e0 = fmax(fabs(ia[j]), e0);
 
+  double ulp = nextafter(e0, 1e8) - e0;
+
   printf("N %6lu L inf Error = %2.8e \n", N, error / e0);
-  printf("               Flops = %lu\n\n", flops);
+  printf("               Flops = %lu\n", flops);
+  printf("               ulp   = %2.16e\n", ulp);
+  printf("          error ulp  = %2.1f\n", error / ulp);
 #ifdef TEST
   assert(error < 1e-10);
 #endif
@@ -57,28 +61,8 @@ void test_forward_backward(size_t N, size_t maxs, size_t M, double m,
   free_fmm(fmmplan);
 }
 
-void test_lambda() {
-  printf("Testing Lambda\n");
-  const double lam[24] = {
-      8.8622692545275805e-01, 6.6467019408956851e-01, 4.8465534985697706e-01,
-      3.4807557771536241e-01, 2.4805479961430874e-01, 1.7608753625554593e-01,
-      1.2475610011693392e-01, 8.8302073254996866e-02, 6.2469489890636082e-02,
-      4.4183385549636807e-02, 3.1246185535707110e-02, 2.2095738254098853e-02,
-      1.5624523170118865e-02, 1.1048374869932079e-02, 7.8124403955826070e-03,
-      5.5242506546358426e-03, 3.9062425494265085e-03, 2.7621332298331754e-03,
-      1.9531240686776474e-03, 1.3810676027327610e-03, 9.7656238358468511e-04,
-      6.9053392484345725e-04, 4.8828123544808499e-04, 3.4526697785636500e-04};
-  for (size_t i = 0; i < 24; i++) {
-    double j = pow(2, i);
-    double x = _Lambda(j);
-    double y = _LambdaE(j);
-    printf("%d %2.6e %2.6e \n", (int)j, x - lam[i], y - lam[i]);
-    // assert(fabs(x-y) < 1e-10);
-  }
-}
-
 void test_accuracy(size_t N, size_t maxs, size_t M, size_t lagrange,
-                   size_t verbose) {
+                   size_t precompute, size_t verbose) {
   const double a[5] = {1.7913439415860921e+00, 2.3408718378050253e+00,
                        1.8833606631960720e+00, 1.6587642683880404e+00,
                        1.4417173322290182e+00};
@@ -89,7 +73,7 @@ void test_accuracy(size_t N, size_t maxs, size_t M, size_t lagrange,
   assert(N < 1000);
   if (verbose > 1)
     printf("test_accuracy N=20 direct and N=%d FMM\n", N);
-  fmm_plan *fmmplan = create_fmm(20, maxs, M, BOTH, lagrange, 1);
+  fmm_plan *fmmplan = create_fmm(20, maxs, M, BOTH, lagrange, precompute, 1);
 
   double *input_array = (double *)calloc(N, sizeof(double));
   double *output_array = (double *)calloc(N, sizeof(double));
@@ -122,7 +106,7 @@ void test_accuracy(size_t N, size_t maxs, size_t M, size_t lagrange,
   for (size_t i = 0; i < N; i++)
     output_array[i] = 0.0;
 
-  fmm_plan *fmmplan2 = create_fmm(N, maxs, M, BOTH, lagrange, 1);
+  fmm_plan *fmmplan2 = create_fmm(N, maxs, M, BOTH, lagrange, precompute, 1);
   direct(input_array, output_array, fmmplan2->dplan, L2C, 1);
 
   double *out = (double *)calloc(N, sizeof(double));
@@ -150,7 +134,7 @@ void test_accuracy(size_t N, size_t maxs, size_t M, size_t lagrange,
            sqrt(error1));
 
   // Test only planning one direction
-  fmm_plan *fmmplan3 = create_fmm(N, maxs, M, L2C, lagrange, 1);
+  fmm_plan *fmmplan3 = create_fmm(N, maxs, M, L2C, lagrange, precompute, 1);
   direct(input_array, output_array, fmmplan3->dplan, L2C, 1);
 
   for (size_t i = 0; i < N; i++)
@@ -163,7 +147,7 @@ void test_accuracy(size_t N, size_t maxs, size_t M, size_t lagrange,
   }
   // assert(sqrt(error0) < 1e-7);
 
-  fmm_plan *fmmplan4 = create_fmm(N, maxs, M, C2L, lagrange, 1);
+  fmm_plan *fmmplan4 = create_fmm(N, maxs, M, C2L, lagrange, precompute, 1);
   direct(input_array, output_array, fmmplan4->dplan, C2L, 1);
 
   for (size_t i = 0; i < N; i++)
@@ -190,10 +174,10 @@ void test_accuracy(size_t N, size_t maxs, size_t M, size_t lagrange,
 }
 
 void test_speed(size_t N, size_t maxs, size_t repeat, size_t direction,
-                size_t M, size_t lagrange, size_t verbose) {
+                size_t M, size_t lagrange, size_t precompute, size_t verbose) {
   if (verbose > 1)
     printf("test_speed %lu\n", direction);
-  fmm_plan *fmmplan = create_fmm(N, maxs, M, direction, lagrange, verbose);
+  fmm_plan *fmmplan = create_fmm(N, maxs, M, direction, lagrange, precompute, verbose);
 
   double *input_array = (double *)calloc(N, sizeof(double));
   double *output_array = (double *)calloc(N, sizeof(double));
@@ -212,10 +196,6 @@ void test_speed(size_t N, size_t maxs, size_t repeat, size_t direction,
     double s1 = toc(g0);
     min_time = s1 < min_time ? s1 : min_time;
   }
-  // for (size_t i = 0; i < 5; i++)
-  //{
-  //   printf("%2.6e\n", output_array[i]);
-  // }
 
   uint64_t t1 = tic;
   printf("Timing N %6lu avg / min = %2.4e / %2.4e flops = %lu\n", N,
@@ -226,10 +206,10 @@ void test_speed(size_t N, size_t maxs, size_t repeat, size_t direction,
 }
 
 void test_direct_speed(size_t N, size_t repeat, size_t direction,
-                       size_t verbose) {
+                       size_t precompute, size_t verbose) {
   if (verbose > 1)
     printf("test_direct_speed %lu\n", direction);
-  direct_plan *dplan = create_direct(N, 2);
+  direct_plan *dplan = create_direct(N, 2, precompute);
 
   double *input_array = (double *)calloc(N, sizeof(double));
   double *output_array = (double *)calloc(N, sizeof(double));
@@ -256,13 +236,11 @@ void test_direct_speed(size_t N, size_t repeat, size_t direction,
   free_direct(dplan);
 }
 
-void test_direct(size_t N, size_t verbose) {
-  direct_plan *dplan = create_direct(N, 2);
+void test_direct(size_t N, size_t precompute, size_t verbose) {
+  direct_plan *dplan = create_direct(N, 2, precompute);
   double *input_array = (double *)calloc(N, sizeof(double));
   double *output_array = (double *)calloc(N, sizeof(double));
   // Initialize some input array
-  // for (size_t i = 0; i < N; i++)
-  //  input_array[i] = 1.0;
   for (size_t i = 0; i < N; i++)
     input_array[i] = (2 * drand48() - 1);
 
@@ -275,7 +253,6 @@ void test_direct(size_t N, size_t verbose) {
   double error = 0.0;
   for (size_t j = 0; j < N; j++) {
     error += pow(input_array[j] - ia[j], 2);
-    // printf("%d %2.4e \n", j, input_array[j] - ia[j]);
   }
   printf("L2 Error direct = %2.4e \n", sqrt(error));
 #ifdef TEST
@@ -287,7 +264,7 @@ void test_direct(size_t N, size_t verbose) {
 }
 
 void test_2_sizes(size_t N, size_t maxs, size_t verbose) {
-  fmm_plan *fmmplan = create_fmm(N, maxs, 18, 2, 0, verbose);
+  fmm_plan *fmmplan = create_fmm(N, maxs, 18, 2, 0, 0, verbose);
   double *input_array = (double *)calloc(N, sizeof(double));
   double *output_array = (double *)calloc(N, sizeof(double));
   // Initialize some input array
@@ -298,7 +275,7 @@ void test_2_sizes(size_t N, size_t maxs, size_t verbose) {
   free(input_array);
   free(output_array);
   free_fmm(fmmplan);
-  fmmplan = create_fmm(2 * N, maxs, 18, 2, 0, verbose);
+  fmmplan = create_fmm(2 * N, maxs, 18, 2, 0, 0, verbose);
   input_array = (double *)calloc(2 * N, sizeof(double));
   output_array = (double *)calloc(2 * N, sizeof(double));
   // Initialize some input array
@@ -325,7 +302,7 @@ void test_forward_2d(size_t N0, size_t N1, size_t maxs, size_t verbose,
   for (size_t axis = 0; axis < 2; axis++) {
     // 1D first
     size_t N = ((axis == 0) ? N0 : N1);
-    fmm_plan *fmmplan = create_fmm(N, maxs, 18, 2, 0, verbose);
+    fmm_plan *fmmplan = create_fmm(N, maxs, 18, 2, 0, 0, verbose);
     for (size_t i = 0; i < N; i++) {
       input_array1d[i] = 1.0 + i;
       output_array1d[i] = 0.0;
@@ -334,7 +311,7 @@ void test_forward_2d(size_t N0, size_t N1, size_t maxs, size_t verbose,
         execute(input_array1d, output_array1d, fmmplan, direction, 1);
 
     fmm_plan_2d *fmmplan2d =
-        create_fmm_2d(N0, N1, axis, maxs, 18, 2, 0, verbose);
+        create_fmm_2d(N0, N1, axis, maxs, 18, 2, 0, 0, verbose);
     // Initialize some input array
     for (size_t i = 0; i < N0; i++) {
       for (size_t j = 0; j < N1; j++) {
@@ -380,7 +357,7 @@ void test_forward_backward_2d(size_t N0, size_t N1, size_t maxs,
   srand48(1);
 
   int axis = -1;
-  fmm_plan_2d *fmmplan2d = create_fmm_2d(N0, N1, axis, maxs, 18, 2, 0, verbose);
+  fmm_plan_2d *fmmplan2d = create_fmm_2d(N0, N1, axis, maxs, 18, 2, 0, 0, verbose);
   // Initialize some input array
   for (size_t i = 0; i < N0; i++) {
     for (size_t j = 0; j < N1; j++) {
@@ -408,8 +385,8 @@ void test_forward_backward_2d(size_t N0, size_t N1, size_t maxs,
   free(output_array2);
 }
 
-void test_directM(size_t N, size_t repeat, size_t verbose, size_t s, size_t M) {
-  fmm_plan *fmmplan = create_fmm(N, s, M, 2, 0, verbose);
+void test_directM(size_t N, size_t repeat, size_t verbose, size_t s, size_t M, size_t precompute) {
+  fmm_plan *fmmplan = create_fmm(N, s, M, 2, 0, precompute, verbose);
   double *input_array = (double *)calloc(N, sizeof(double));
   double *output_array = (double *)calloc(N, sizeof(double));
   size_t flops;
@@ -426,21 +403,16 @@ void test_directM(size_t N, size_t repeat, size_t verbose, size_t s, size_t M) {
   free_fmm(fmmplan);
 }
 
-void test_dct(size_t N, size_t repeat) {
+void test_dct0(size_t N, size_t repeat) {
   double *fun = (double *)fftw_malloc(N * sizeof(double));
-  //double *fun_hat = (double *)fftw_malloc(N * sizeof(double));
-  //fftw_complex *fun = (fftw_complex *)fftw_malloc(N * sizeof(fftw_complex));
-  fftw_complex *fun_hat = (fftw_complex *)fftw_malloc(N * sizeof(fftw_complex));
+  double *fun_hat = (double *)fftw_malloc(N * sizeof(double));
 
-  //fftw_plan plan = fftw_plan_r2r_1d(N, fun, fun_hat, FFTW_REDFT10, FFTW_PATIENT);
-  //fftw_plan plan = fftw_plan_dft_1d(N, fun, fun_hat, FFTW_FORWARD, FFTW_PATIENT);
-  fftw_plan plan = fftw_plan_dft_r2c_1d(N, fun, fun_hat, FFTW_PATIENT);
+  fftw_plan plan =
+      fftw_plan_r2r_1d(N, fun, fun_hat, FFTW_REDFT10, FFTW_PATIENT);
 
   double min_time = 1e8;
-  double min_time2 = 1e8;
   for (size_t i = 0; i < N; i++) {
     fun[i] = i * i;
-    //fun[i][0] = i * i;
   }
 
   uint64_t t0 = tic;
@@ -450,56 +422,194 @@ void test_dct(size_t N, size_t repeat) {
     double s1 = toc(g0);
     min_time = s1 < min_time ? s1 : min_time;
   }
-  printf("Time avg fftw %2.6e %2.6e \n", min_time, toc(t0) / repeat);
+  printf("Time %2.6e %2.6e N = %d\n", min_time, toc(t0) / repeat, N);
+  fftw_free(fun);
+  fftw_free(fun_hat);
+  fftw_destroy_plan(plan);
+  return;
+}
+
+void test_dct(size_t N, size_t repeat) {
+  double *fun = (double *)fftw_malloc(N * sizeof(double));
+  double *fun_hat = (double *)fftw_malloc(N * sizeof(double));
+
+  fftw_plan plan =
+      fftw_plan_r2r_1d(N, fun, fun_hat, FFTW_REDFT10, FFTW_PATIENT);
+
+  double min_time = 1e8;
+  double min_time2 = 1e8;
+  for (size_t i = 0; i < N; i++) {
+    fun[i] = i;
+  }
+
+  uint64_t t0 = tic;
+  for (size_t i = 0; i < repeat; i++) {
+    uint64_t g0 = tic;
+    fftw_execute(plan);
+    double s1 = toc(g0);
+    min_time = s1 < min_time ? s1 : min_time;
+  }
+  printf("Time avg fftw %2.6e %2.6e N = %d\n", min_time, toc(t0) / repeat, N);
 
   double add, mul, fma;
   fftw_flops(plan, &add, &mul, &fma);
   printf("N %d Flops %f\n", N, add + mul + 2 * fma);
 
-  if (N == 18) {
-    t0 = tic;
-    for (size_t i = 0; i < repeat; i++) {
-      uint64_t g0 = tic;
-      dct(fun, fun_hat, 1);
-      double s1 = toc(g0);
-      min_time2 = s1 < min_time2 ? s1 : min_time2;
+  double fun2[18], fun3[324];
+  double fun_hat2[18], fun_hat3[324];
+  for (size_t i = 0; i < 18; i++) {
+    fun2[i] = i * i;
+    for (size_t j = 0; j < 18; j++) {
+      fun3[i * 18 + j] = i + j;
     }
-    printf("Time avg dct %2.6e %2.6e\n", min_time2, toc(t0) / repeat);
   }
+  dct(fun2, fun_hat, 1);
+  dct_radix23(fun2, fun_hat2, 1);
+  double err0 = 0;
+  for (size_t i = 0; i < 18; i++) {
+    err0 += pow(fun_hat[i] - fun_hat2[i], 2);
+  }
+  printf("Err dct_fft %2.16e\n", err0);
+
+  t0 = tic;
+  for (size_t i = 0; i < repeat; i++) {
+    uint64_t g0 = tic;
+    dct(fun2, fun_hat2, 1);
+    double s1 = toc(g0);
+    min_time2 = s1 < min_time2 ? s1 : min_time2;
+  }
+  printf("Time avg dct     %2.6e %2.6e\n", min_time2, toc(t0) / repeat);
+
+  t0 = tic;
+  min_time2 = 1e8;
+  for (size_t i = 0; i < repeat; i++) {
+    uint64_t g0 = tic;
+    dct_fft(fun2, fun_hat2, 1);
+    double s1 = toc(g0);
+    min_time2 = s1 < min_time2 ? s1 : min_time2;
+  }
+  printf("Time avg dct_fft %2.6e %2.6e\n", min_time2, toc(t0) / repeat);
+
+  t0 = tic;
+  min_time2 = 1e8;
+  for (size_t i = 0; i < repeat; i++) {
+    uint64_t g0 = tic;
+    dct_radix2(fun2, fun_hat2, 1);
+    double s1 = toc(g0);
+    min_time2 = s1 < min_time2 ? s1 : min_time2;
+  }
+  printf("Time avg dct_r22 %2.6e %2.6e\n", min_time2, toc(t0) / repeat);
+
+  t0 = tic;
+  min_time2 = 1e8;
+  for (size_t i = 0; i < repeat; i++) {
+    uint64_t g0 = tic;
+    dct_radix23(fun2, fun_hat2, 1);
+    double s1 = toc(g0);
+    min_time2 = s1 < min_time2 ? s1 : min_time2;
+  }
+  printf("Time avg dct_r23 %2.6e %2.6e\n", min_time2, toc(t0) / repeat);
+
+  t0 = tic;
+  min_time2 = 1e8;
+  for (size_t i = 0; i < repeat; i++) {
+    uint64_t g0 = tic;
+    dct0(fun2, fun_hat2, 1);
+    double s1 = toc(g0);
+    min_time2 = s1 < min_time2 ? s1 : min_time2;
+  }
+  printf("Time avg dct0    %2.6e %2.6e\n", min_time2, toc(t0) / repeat);
+
+  double v[18];
+  for (size_t i = 0; i < 18; i++) {
+    v[i] = i * i;
+  }
+
+  fftw_complex x[9];
+  fftw_complex *xc = (fftw_complex *)fftw_malloc(9 * sizeof(fftw_complex));
+  fftw_complex *xh = (fftw_complex *)fftw_malloc(9 * sizeof(fftw_complex));
+  fftw_plan planc = fftw_plan_dft_1d(9, xc, xh, FFTW_FORWARD, FFTW_PATIENT);
+
+  for (int i = 0; i < 9; ++i) {
+    x[i] = (fftw_complex){v[2 * i], v[2 * i + 1]};
+    xc[i] = (fftw_complex){v[2 * i], v[2 * i + 1]};
+  }
+
+  fft9c(x);
+  fftw_execute(planc);
+
+  double err = 0;
+  for (size_t i = 0; i < 9; i++) {
+    err +=
+        pow(creal(xh[i]) - creal(x[i]), 2) + pow(cimag(xh[i]) - cimag(x[i]), 2);
+  }
+  printf("Error fft9 %2.6e %2.6e \n", err);
+
+  t0 = tic;
+  min_time2 = 1e8;
+  for (size_t i = 0; i < repeat; i++) {
+    uint64_t g0 = tic;
+    fft9(x);
+    double s1 = toc(g0);
+    min_time2 = s1 < min_time2 ? s1 : min_time2;
+  }
+  printf("Time avg fft9  fftw_complex %2.6e %2.6e\n", min_time2,
+         toc(t0) / repeat);
+
+  t0 = tic;
+  min_time2 = 1e8;
+  for (size_t i = 0; i < repeat; i++) {
+    uint64_t g0 = tic;
+    fft9c(x);
+    double s1 = toc(g0);
+    min_time2 = s1 < min_time2 ? s1 : min_time2;
+  }
+  printf("Time avg fft9c fftw_complex %2.6e %2.6e\n", min_time2,
+         toc(t0) / repeat);
+
+  t0 = tic;
+  min_time2 = 1e8;
+  for (size_t i = 0; i < repeat; i++) {
+    uint64_t g0 = tic;
+    fftw_execute(planc);
+    double s1 = toc(g0);
+    min_time2 = s1 < min_time2 ? s1 : min_time2;
+  }
+  printf("Time avg fftw               %2.6e %2.6e\n", min_time2,
+         toc(t0) / repeat);
+
+  fftw_print_plan(planc);
   fftw_print_plan(plan);
+  fftw_destroy_plan(planc);
+  fftw_destroy_plan(plan);
+  fftw_free(xc);
+  fftw_free(xh);
   fftw_free(fun);
   fftw_free(fun_hat);
-  fftw_destroy_plan(plan);
 }
 
-void test_matvectriZ(size_t N, size_t repeat, size_t M, size_t lagrange,
-                     size_t verbose) {
-  fmm_plan *fmmplan = create_fmm(N, 64, M, 2, lagrange, verbose);
+void test_flops_dct_fftw() {
+  double add, mul, fma;
+  for (size_t i = 6; i < 12; i++) {
+    size_t N = pow(2, i);
+    double *fun = (double *)fftw_malloc(N * sizeof(double));
+    double *fun_hat = (double *)fftw_malloc(N * sizeof(double));
+    fftw_plan plan =
+        fftw_plan_r2r_1d(N, fun, fun_hat, FFTW_REDFT10, FFTW_MEASURE);
+
+    fftw_flops(plan, &add, &mul, &fma);
+    printf("%d %8.2f %8.2f \n", N, (add + mul + 2 * fma), 2 * N * log2(N));
+  }
+}
+
+void test_matvectri(size_t N, size_t repeat, size_t M, size_t lagrange,
+                     size_t precompute, size_t verbose) {
+  fmm_plan *fmmplan = create_fmm(N, 64, M, 2, lagrange, precompute, verbose);
   double *input_array = (double *)calloc(N, sizeof(double));
   double *output_array = (double *)calloc(N, sizeof(double));
   double min_time = 1e8;
   for (size_t i = 0; i < repeat; i++) {
     uint64_t r0 = tic;
-    /*//////////
-    for (size_t level = fmmplan->L; level-- > 1;) {
-      double *w1 = fmmplan->wk[level - 1];
-      for (size_t block = 1; block < get_number_of_blocks(level); block++) {
-        size_t Nd = block * 2 * M;
-        double *wq = &(fmmplan->wk[level][Nd]);
-        int b0 = (block - 1) / 2;
-        int q0 = (block - 1) % 2;
-        if (lagrange == 0) {
-          matvectri(&fmmplan->B[0], wq, &w1[(b0 * 2 + q0) * M], fmmplan->work,
-                     M, false);
-        } else {
-          cblas_dgemv(CblasRowMajor, CblasTrans, M, M, 1, &fmmplan->B[0], M,
-    &wq[0], 1, 0, &w1[(b0 * 2 + q0) * M], 1); cblas_dgemv(CblasRowMajor,
-    CblasTrans, M, M, 1, &fmmplan->B[M * M], M, &wq[M], 1, 0, &w1[(b0 * 2 + q0)
-    * M], 1);
-        }
-      }
-    }
-    /*/////////////
     for (size_t level = 0; level < fmmplan->L - 1; level++) {
       double *c0 = fmmplan->ck[level];
       double *c1 = fmmplan->ck[level + 1];
@@ -516,18 +626,17 @@ void test_matvectriZ(size_t N, size_t repeat, size_t M, size_t lagrange,
         }
       }
     }
-    ///////////
     double s1 = toc(r0);
     min_time = s1 < min_time ? s1 : min_time;
   }
-  printf("matvectriZ min time %2.6e\n", min_time);
+  printf("matvectri min time %2.6e\n", min_time);
   free(input_array);
   free(output_array);
   free_fmm(fmmplan);
 }
 
 void test_init(size_t N, size_t maxs, size_t repeat, size_t direction, size_t M,
-               size_t lagrange, size_t verbose) {
+               size_t lagrange, size_t precompute, size_t verbose) {
   if (verbose > 1)
     printf("test_init %lu\n", direction);
 
@@ -536,7 +645,7 @@ void test_init(size_t N, size_t maxs, size_t repeat, size_t direction, size_t M,
   size_t flops;
   for (size_t i = 0; i < repeat; i++) {
     uint64_t g0 = tic;
-    fmm_plan *fmmplan = create_fmm(N, maxs, M, direction, lagrange, verbose);
+    fmm_plan *fmmplan = create_fmm(N, maxs, M, direction, lagrange, precompute, verbose);
     double s1 = toc(g0);
     min_time = s1 < min_time ? s1 : min_time;
     free(fmmplan);
@@ -556,6 +665,7 @@ int main(int argc, char *argv[]) {
   size_t M = 18;
   size_t R = 0;
   double m = 0;
+  size_t precompute = 0;
   size_t repeat = 1;
   unsigned direction;
   char *help =
@@ -568,7 +678,8 @@ int main(int argc, char *argv[]) {
       "  -m      Data decay coefficient (optional, default=0). \n"
       "  -r      Repeat computation this many times (for timing, default=1)\n"
       "  -v      Level of verbosity (optional, default=0)\n"
-      "  -t      Number of threads if using openmp\n"
+      "  -t      Number of threads if using openmp (optional, default=1)\n"
+      "  -p      Precompute direct part of matrix (optional, default=0)\n"
       "  -R      Use random data (optional, default=0)\n"
       "  -d      Kind of transform to run\n"
       "       0 - Test speed of Legendre to Chebyshev transform\n"
@@ -576,7 +687,7 @@ int main(int argc, char *argv[]) {
       "       2 - Test accuracy of one transform back and forth\n"
       "       3 - Test direct transform back and forth\n";
 
-  while ((opt = getopt(argc, argv, ":N:d:s::M::m::r::v::t::R::l::h")) != -1) {
+  while ((opt = getopt(argc, argv, ":N:d:s::M::m::r::v::t::p::R::l::h")) != -1) {
     switch (opt) {
     case 'N':
       N = atoi(optarg);
@@ -598,6 +709,9 @@ int main(int argc, char *argv[]) {
       break;
     case 't':
       num_threads = atoi(optarg);
+      break;
+    case 'p':
+      precompute = atoi(optarg);
       break;
     case 'M':
       M = atoi(optarg);
@@ -623,15 +737,15 @@ int main(int argc, char *argv[]) {
   switch (direction) {
   case 0:
   case 1:
-    test_speed(N, maxs, repeat, direction, M, lagrange, verbose);
+    test_speed(N, maxs, repeat, direction, M, lagrange, precompute, verbose);
     break;
 
   case 2:
-    test_forward_backward(N, maxs, M, m, R, lagrange, verbose);
+    test_forward_backward(N, maxs, M, m, R, lagrange, precompute, verbose);
     break;
 
   case 3:
-    test_direct(N, verbose);
+    test_direct(N, precompute, verbose);
     break;
 
   case 4:
@@ -643,28 +757,27 @@ int main(int argc, char *argv[]) {
     break;
 
   case 6:
-    test_direct_speed(N, repeat, L2C, verbose);
+    test_direct_speed(N, repeat, L2C, precompute, verbose);
     break;
 
   case 7:
-    test_dct(N, repeat);
+    test_dct0(N, repeat);
     break;
 
   case 8:
-    test_lambda();
+    test_accuracy(N, maxs, M, lagrange, precompute, verbose);
     break;
 
   case 9:
-    test_accuracy(N, maxs, M, lagrange, verbose);
+    test_init(N, maxs, repeat, L2C, M, lagrange, precompute, verbose);
     break;
 
   case 10:
-    test_init(N, maxs, repeat, L2C, M, lagrange, verbose);
+    test_flops_dct_fftw();
     break;
 
   default:
-    // test_directM(N, repeat, verbose, maxs, M);
-    test_matvectriZ(N, repeat, M, lagrange, verbose);
+    test_matvectri(N, repeat, M, lagrange, precompute, verbose);
     break;
   }
 }

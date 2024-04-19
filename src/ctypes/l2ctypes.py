@@ -12,7 +12,9 @@ class direct_plan(Structure):
                   ("N", c_size_t),
                   ("a", doublep),
                   ("dn", doublep),
-                  ("an", doublep)]
+                  ("an", doublep),
+                  ("lf", doublep),
+                  ("lb", doublep)]
 
 class fmm_plan(Structure):
     __fields__ = [("direction", c_size_t),
@@ -31,11 +33,12 @@ class fmm_plan(Structure):
                   ("work", doublep),
                   ("wk", doublepp),
                   ("ck", doublepp),
+                  ("ll", doublepp),
                   ("dplan", POINTER(direct_plan))]
 
 create_fmm = C.create_fmm
 create_fmm.restype = POINTER(fmm_plan)
-create_fmm.argtypes = [c_size_t, c_size_t, c_size_t, c_size_t, c_size_t, c_size_t]
+create_fmm.argtypes = [c_size_t, c_size_t, c_size_t, c_size_t, c_size_t, c_size_t, c_size_t]
 execute = C.execute
 execute.argtypes = [c_void_p, c_void_p, POINTER(fmm_plan), c_size_t, c_size_t]
 create_direct = C.create_direct
@@ -43,7 +46,7 @@ create_direct.restype = POINTER(direct_plan)
 create_direct.argtypes = [c_size_t, c_size_t, c_size_t]
 direct = C.direct
 direct.argtypes = [c_void_p, c_void_p, POINTER(direct_plan), c_size_t, c_size_t]
-Lambda = C._Lambda
+Lambda = C.Lambda
 Lambda.restype = c_double
 
 class Leg2Cheb:
@@ -71,9 +74,9 @@ class Leg2Cheb:
         Verbosity level
     """
     def __init__(self, input_array, output_array, maxs : int=36,
-                 M : int=18, direction : int=2, lagrange : int=0, verbose : int=1):
+                 M : int=18, direction : int=2, lagrange : int=0, precompute : int=0, verbose : int=1):
         self.N = input_array.shape[0]
-        self.plan = create_fmm(self.N, maxs, M, direction, lagrange, verbose)
+        self.plan = create_fmm(self.N, maxs, M, direction, lagrange, precompute, verbose)
         self._input_array = input_array
         self._output_array = output_array
         self._input_ctypes = input_array.ctypes
