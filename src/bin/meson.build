@@ -10,7 +10,7 @@ l2c = executable('l2c',
                  link_with : l2clib)
 
 test('test l2c forward-backward N1000', l2c, args : ['-N1000', '-d2'])
-test('test l2c forward-backward N100', l2c, args : ['-N100', '-d2'])
+test('test l2c forward-backward N100', l2c, args : ['-N100', '-d2', '-v2'])
 test('test l2c direct', l2c, args : ['-N100', '-d3'])
 test('test l2c forward 2d', l2c, args : ['-N400', '-d4'])
 test('test l2c forward-backward 2d', l2c, args : ['-N400', '-d5'])

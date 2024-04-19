@@ -15,6 +15,8 @@ void test_forward_backward(size_t N, size_t maxs, size_t M, double m,
   double *input_array = (double *)calloc(N, sizeof(double));
   double *output_array = (double *)calloc(N, sizeof(double));
 
+  if (verbose > 1)
+    printf("Initializing\n");
   // srand48((unsigned int)time(NULL));
   srand48(1);
   // Initialize some input array
