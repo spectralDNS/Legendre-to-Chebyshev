@@ -195,7 +195,7 @@ size_t direct(const double *u, double *b, direct_plan *dplan, size_t direction,
         b[i * strides] *= (i + 0.5);
       flops += N;
       fftw_free(vn);
-    }
+  }
   /*} else {
     if (direction == L2C) {
       const double *ap = &dplan->lf[0];
@@ -231,7 +231,7 @@ size_t direct(const double *u, double *b, direct_plan *dplan, size_t direction,
       flops += N;
       fftw_free(vn);
     }
-  */}
+  }*/
   return flops;
 }
 
