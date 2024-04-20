@@ -123,7 +123,6 @@ const double BMeT[171] __attribute__((aligned)) = {
     3.0517578125000000e-05,  -4.8828125000000000e-04, 3.7612915039062500e-03,
     1.5258789062500000e-05,  -2.5939941406250000e-04, 7.6293945312500000e-06};
 
-
 size_t get_number_of_blocks(const size_t level) {
   return pow(2, level + 1) - 1;
 }
@@ -159,42 +158,42 @@ size_t direct(const double *u, double *b, direct_plan *dplan, size_t direction,
   for (size_t i = 0; i < N; i++)
     b[i] = 0.0;
   flops += N;
-  //if (dplan->lf == NULL) {
-    if (direction == L2C) {
-      const double *a = dplan->a;
-      for (size_t n = 0; n < N; n = n + 2) {
-        const double *ap = &a[n / 2];
-        const double *cp = &u[n];
-        const double a0 = ap[0] * M_2_PI;
-        for (size_t i = 0; i < N - n; i++) {
-          b[i * strides] += a0 * ap[i] * cp[i];
-        }
-        flops += 3 * (N - n);
+  // if (dplan->lf == NULL) {
+  if (direction == L2C) {
+    const double *a = dplan->a;
+    for (size_t n = 0; n < N; n = n + 2) {
+      const double *ap = &a[n / 2];
+      const double *cp = &u[n];
+      const double a0 = ap[0] * M_2_PI;
+      for (size_t i = 0; i < N - n; i++) {
+        b[i * strides] += a0 * ap[i] * cp[i];
       }
-      b[0] /= 2;
-      flops += N;
-    } else {
-      double *vn = (double *)fftw_malloc(N * sizeof(double));
-      const double *an = dplan->an;
-      const double *dn = dplan->dn;
-      vn[0] = u[0];
-      for (size_t i = 1; i < N; i++)
-        vn[i] = u[i * strides] * i;
+      flops += 3 * (N - n);
+    }
+    b[0] /= 2;
+    flops += N;
+  } else {
+    double *vn = (double *)fftw_malloc(N * sizeof(double));
+    const double *an = dplan->an;
+    const double *dn = dplan->dn;
+    vn[0] = u[0];
+    for (size_t i = 1; i < N; i++)
+      vn[i] = u[i * strides] * i;
 
-      for (size_t n = 0; n < N; n++)
-        b[n * strides] = sqrt_pi * vn[n] * an[n];
+    for (size_t n = 0; n < N; n++)
+      b[n * strides] = sqrt_pi * vn[n] * an[n];
 
-      for (size_t n = 2; n < N; n = n + 2) {
-        const double *ap = &an[n / 2];
-        const double *vp = &vn[n];
-        for (size_t i = 0; i < N - n; i++)
-          b[i * strides] -= dn[n / 2] * ap[i] * vp[i];
-        flops += 3 * (N - n);
-      }
-      for (size_t i = 0; i < N; i++)
-        b[i * strides] *= (i + 0.5);
-      flops += N;
-      fftw_free(vn);
+    for (size_t n = 2; n < N; n = n + 2) {
+      const double *ap = &an[n / 2];
+      const double *vp = &vn[n];
+      for (size_t i = 0; i < N - n; i++)
+        b[i * strides] -= dn[n / 2] * ap[i] * vp[i];
+      flops += 3 * (N - n);
+    }
+    for (size_t i = 0; i < N; i++)
+      b[i * strides] *= (i + 0.5);
+    flops += N;
+    fftw_free(vn);
   }
   /*} else {
     if (direction == L2C) {
@@ -244,7 +243,7 @@ size_t directM(const double *input_array, double *output_array,
   size_t h = 2 * s;
   size_t nL = N / h;
 
-  if (fmmplan->ll == NULL) {
+  if (fmmplan->lf == NULL) {
     for (size_t block = 0; block < nL - 1; block++) {
       size_t i0 = block * h;
       for (size_t n = 0; n < 4 * s; n = n + 2) {
@@ -304,7 +303,7 @@ size_t directM(const double *input_array, double *output_array,
   } else {
     for (size_t block = 0; block < nL - 1; block++) {
       size_t i0 = block * h;
-      const double *ap = &fmmplan->ll[block][0];
+      const double *ap = &fmmplan->lf[block][0];
       for (size_t n = 0; n < 4 * s; n = n + 2) {
         size_t i;
         if (strides == 1) {
@@ -338,7 +337,7 @@ size_t directM(const double *input_array, double *output_array,
 
     // Last block
     size_t i0 = (nL - 1) * h;
-    const double *ap = &fmmplan->ll[nL - 1][0];
+    const double *ap = &fmmplan->lf[nL - 1][0];
     for (size_t n = 0; n < N - i0; n++) {
       const double *cp = &input_array[(i0 + 2 * n) * strides];
       double *op = &output_array[i0 * strides];
@@ -398,61 +397,118 @@ size_t directL(const double *input, double *output_array, fmm_plan *fmmplan,
   }
   flops += N * 3;
 
-  for (size_t block = 0; block < nL - 1; block++) {
-    size_t i0 = block * h;
-    for (size_t n = 2; n < 4 * s; n = n + 2) {
-      const size_t n1 = n / 2;
-      const double *ap = &an[i0 + n1];
-      const double d0 = dn[n1];
-      size_t i;
-      if (strides == 1) {
-        double *vp = &output_array[i0];
-        const double *ia = &input[i0 + n];
-        if (n < h) {
-          for (i = 0; i < h; i++) {
-            (*vp++) -= d0 * (*ia++) * (*ap++);
+  if (fmmplan->dplan->lb == NULL) {
+    for (size_t block = 0; block < nL - 1; block++) {
+      size_t i0 = block * h;
+      for (size_t n = 2; n < 4 * s; n = n + 2) {
+        const size_t n1 = n / 2;
+        const double *ap = &an[i0 + n1];
+        const double d0 = dn[n1];
+        size_t i;
+        if (strides == 1) {
+          double *vp = &output_array[i0];
+          const double *ia = &input[i0 + n];
+          if (n < h) {
+            for (i = 0; i < h; i++) {
+              (*vp++) -= d0 * (*ia++) * (*ap++);
+            }
+          } else {
+            for (i = 0; i < 2 * h - n; i++) {
+              (*vp++) -= d0 * (*ia++) * (*ap++);
+            }
           }
         } else {
-          for (i = 0; i < 2 * h - n; i++) {
-            (*vp++) -= d0 * (*ia++) * (*ap++);
+          double *vp = &output_array[i0 * strides];
+          const double *ia = &input[i0 + n];
+          if (n < h) {
+            for (i = 0; i < h; i++) {
+              (*vp) -= d0 * (*ia++) * (*ap++);
+              vp += strides;
+            }
+          } else {
+            for (i = 0; i < 2 * h - n; i++) {
+              (*vp) -= d0 * (*ia++) * (*ap++);
+              vp += strides;
+            }
           }
+        }
+        flops += i * 3;
+      }
+    }
+
+    // Last block
+    size_t i0 = (nL - 1) * h;
+    for (size_t n = 1; n < N - i0; n++) {
+      const double *ap = &an[n + i0];
+      const double *ia = &input[i0 + 2 * n];
+      double *op = &output_array[i0 * strides];
+      if (strides == 1) {
+        for (size_t i = i0; i < N - 2 * n; i++) {
+          (*op++) -= dn[n] * (*ap++) * (*ia++);
         }
       } else {
-        double *vp = &output_array[i0 * strides];
-        const double *ia = &input[i0 + n];
-        if (n < h) {
-          for (i = 0; i < h; i++) {
-            (*vp) -= d0 * (*ia++) * (*ap++);
-            vp += strides;
-          }
-        } else {
-          for (i = 0; i < 2 * h - n; i++) {
-            (*vp) -= d0 * (*ia++) * (*ap++);
-            vp += strides;
-          }
+        for (size_t i = i0; i < N - 2 * n; i++) {
+          (*op) -= dn[n] * (*ap++) * (*ia++);
+          op += strides;
         }
       }
-      flops += i * 3;
+      flops += (N - (2 * n + i0)) * 3;
     }
-  }
+  } else {
+    for (size_t block = 0; block < nL - 1; block++) {
+      size_t i0 = block * h;
+      const double *ap = &fmmplan->lb[block][0];
+      for (size_t n = 2; n < 4 * s; n = n + 2) {
+        size_t i;
+        if (strides == 1) {
+          double *vp = &output_array[i0];
+          const double *ia = &input[i0 + n];
+          if (n < h) {
+            for (i = 0; i < h; i++) {
+              (*vp++) -= (*ia++) * (*ap++);
+            }
+          } else {
+            for (i = 0; i < 2 * h - n; i++) {
+              (*vp++) -= (*ia++) * (*ap++);
+            }
+          }
+        } else {
+          double *vp = &output_array[i0 * strides];
+          const double *ia = &input[i0 + n];
+          if (n < h) {
+            for (i = 0; i < h; i++) {
+              (*vp) -= (*ia++) * (*ap++);
+              vp += strides;
+            }
+          } else {
+            for (i = 0; i < 2 * h - n; i++) {
+              (*vp) -= (*ia++) * (*ap++);
+              vp += strides;
+            }
+          }
+        }
+        flops += i * 2;
+      }
+    }
 
-  // Last block
-  size_t i0 = (nL - 1) * h;
-  for (size_t n = 1; n < N - i0; n++) {
-    const double *ap = &an[n + i0];
-    const double *ia = &input[i0 + 2 * n];
-    double *op = &output_array[i0 * strides];
-    if (strides == 1) {
-      for (size_t i = i0; i < N - 2 * n; i++) {
-        (*op++) -= dn[n] * (*ap++) * (*ia++);
+    // Last block
+    size_t i0 = (nL - 1) * h;
+    const double *ap = &fmmplan->lb[nL - 1][0];
+    for (size_t n = 1; n < N - i0; n++) {
+      const double *ia = &input[i0 + 2 * n];
+      double *op = &output_array[i0 * strides];
+      if (strides == 1) {
+        for (size_t i = i0; i < N - 2 * n; i++) {
+          (*op++) -= (*ap++) * (*ia++);
+        }
+      } else {
+        for (size_t i = i0; i < N - 2 * n; i++) {
+          (*op) -= (*ap++) * (*ia++);
+          op += strides;
+        }
       }
-    } else {
-      for (size_t i = i0; i < N - 2 * n; i++) {
-        (*op) -= dn[n] * (*ap++) * (*ia++);
-        op += strides;
-      }
+      flops += (N - (2 * n + i0)) * 2;
     }
-    flops += (N - (2 * n + i0)) * 3;
   }
 
   // Multiply result by (x+1/2)
@@ -682,11 +738,17 @@ void free_fmm(fmm_plan *plan) {
       plan->ck[level] = NULL;
     fftw_free(plan->ck);
   }
-  if (plan->ll != NULL) {
-    fftw_free(plan->ll[0]);
+  if (plan->lb != NULL) {
+    fftw_free(plan->lb[0]);
     for (size_t block = 0; block < plan->N / (2 * plan->s); block++)
-      plan->ll[block] = NULL;
-    fftw_free(plan->ll);
+      plan->lb[block] = NULL;
+    fftw_free(plan->lb);
+  }
+  if (plan->lf != NULL) {
+    fftw_free(plan->lf[0]);
+    for (size_t block = 0; block < plan->N / (2 * plan->s); block++)
+      plan->lf[block] = NULL;
+    fftw_free(plan->lf);
   }
   if (plan->dplan != NULL) {
     free_direct(plan->dplan);
@@ -808,7 +870,8 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
   fmmplan->wk = NULL;
   fmmplan->ck = NULL;
   fmmplan->dplan = NULL;
-  fmmplan->ll = NULL;
+  fmmplan->lf = NULL;
+  fmmplan->lb = NULL;
   fmmplan->lagrange = lagrange;
 
   int L = ceil(log2((double)N / (double)maxs)) - 2;
@@ -875,9 +938,6 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
   double *fx1 = (double *)fftw_malloc(MM * sizeof(double));
   double *lx1 = (double *)fftw_malloc(MM * sizeof(double));
 
-  // uint64_t t00 = 0;
-  // uint64_t t11 = 0;
-
   size_t kk = 0;
   for (size_t level = 0; level < L; level++) {
     size_t h = s * get_h(level, L);
@@ -891,7 +951,6 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
           size_t x0 = 2 * (ij[0] + p * h) + h;
           for (size_t di = 0; di < num_directions; di++) {
             const size_t dir = directions[di];
-            // uint64_t r0 = tic;
             //  ff is input to the DCT
             double *ff = (lagrange == 0) ? &fun[0] : &A[dir][kk * MM];
             double *f00 = &fx0[q * MM];
@@ -945,15 +1004,12 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
                 dct2(&fun[0], &A[dir][kk * MM]);
               }
             }
-            // t11 += tic - r1;
           }
           kk += 1;
         }
       }
     }
   }
-
-  // printf("Time 0: %2.6e   Time 1: %2.6e\n", t00 / 1.0E9, t11 / 1.0E9);
 
   double *wj = NULL;
   if (lagrange == 1) {
@@ -1069,46 +1125,88 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
 
   //////////
   if (precompute == 1) {
+
     size_t h = 2 * s;
     size_t nL = N / h;
-    double **ll = (double **)fftw_malloc(nL * sizeof(double *));
-    ll[0] = (double *)fftw_malloc(nL * (3 * s * s + s) * sizeof(double));
-    for (size_t block = 1; block < nL; block++) {
-      ll[block] = ll[block - 1] + 3 * s * s + s;
-    }
-    const double *a = fmmplan->dplan->a;
-    for (size_t block = 0; block < nL - 1; block++) {
-      size_t i0 = block * h;
-      double *lb = &ll[block][0];
-      for (size_t n = 0; n < 4 * s; n = n + 2) {
-        const size_t n1 = n / 2;
-        const double *ap = &a[i0 + n1];
-        const double a0 = a[n1];
-        size_t i;
-        if (n < h) {
-          for (i = 0; i < h; i++) {
-            (*lb++) = a0 * ap[i];
-          }
-        } else {
-          for (i = 0; i < 2 * h - n; i++) {
-            (*lb++) = a0 * ap[i];
+
+    if ((direction == L2C) || (direction == BOTH)) {
+      double **lf = (double **)fftw_malloc(nL * sizeof(double *));
+      lf[0] = (double *)fftw_malloc(nL * (3 * s * s + s) * sizeof(double));
+      for (size_t block = 1; block < nL; block++) {
+        lf[block] = lf[block - 1] + 3 * s * s + s;
+      }
+      const double *a = fmmplan->dplan->a;
+      for (size_t block = 0; block < nL - 1; block++) {
+        size_t i0 = block * h;
+        double *l0 = &lf[block][0];
+        for (size_t n = 0; n < 4 * s; n = n + 2) {
+          const size_t n1 = n / 2;
+          const double *ap = &a[i0 + n1];
+          const double a0 = a[n1];
+          size_t i;
+          if (n < h) {
+            for (i = 0; i < h; i++) {
+              (*l0++) = a0 * ap[i];
+            }
+          } else {
+            for (i = 0; i < 2 * h - n; i++) {
+              (*l0++) = a0 * ap[i];
+            }
           }
         }
       }
-    }
-    // Last block
-    size_t i0 = (nL - 1) * h;
-    double *lb = &ll[nL-1][0];
-    for (size_t n = 0; n < N - i0; n++) {
-      const double *ap = &a[n + i0];
-      const double a0 = a[n];
-      if ((int)N - (2 * n + i0) <= 0)
-        break;
-      for (int i = 0; i < N - (2 * n + i0); i++) {
-        (*lb++) = a0 * ap[i];
+      // Last block
+      size_t i0 = (nL - 1) * h;
+      double *l0 = &lf[nL - 1][0];
+      for (size_t n = 0; n < N - i0; n++) {
+        const double *ap = &a[n + i0];
+        const double a0 = a[n];
+        if ((int)N - (2 * n + i0) <= 0)
+          break;
+        for (int i = 0; i < N - (2 * n + i0); i++) {
+          (*l0++) = a0 * ap[i];
+        }
       }
+      fmmplan->lf = lf;
     }
-    fmmplan->ll = ll;
+
+    if ((direction == C2L) || (direction == BOTH)) {
+      double **lb = (double **)fftw_malloc(nL * sizeof(double *));
+      lb[0] = (double *)fftw_malloc(nL * (3 * s * s + s) * sizeof(double));
+      for (size_t block = 1; block < nL; block++) {
+        lb[block] = lb[block - 1] + 3 * s * s + s;
+      }
+      for (size_t block = 0; block < nL - 1; block++) {
+        size_t i0 = block * h;
+        double *l1 = &lb[block][0];
+        for (size_t n = 2; n < 4 * s; n = n + 2) {
+          const size_t n1 = n / 2;
+          const double *ap = &fmmplan->dplan->an[i0 + n1];
+          const double d0 = fmmplan->dplan->dn[n1];
+          size_t i;
+          if (n < h) {
+            for (i = 0; i < h; i++) {
+              (*l1++) = d0 * (*ap++);
+            }
+          } else {
+            for (i = 0; i < 2 * h - n; i++) {
+              (*l1++) = d0 * (*ap++);
+            }
+          }
+        }
+      }
+
+      // Last block
+      size_t i0 = (nL - 1) * h;
+      double *l1 = &lb[nL - 1][0];
+      for (size_t n = 1; n < N - i0; n++) {
+        const double *ap = &fmmplan->dplan->an[n + i0];
+        for (size_t i = i0; i < N - 2 * n; i++) {
+          (*l1++) = fmmplan->dplan->dn[n] * (*ap++);
+        }
+      }
+      fmmplan->lb = lb;
+    }
   }
   //////////
 

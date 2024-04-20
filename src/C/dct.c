@@ -1,5 +1,8 @@
 #include "leg2cheb.h"
 
+// Some experimental and different implementations for the DCT of size 18
+// Some are much faster due to compiler optimization (simd/avx) than others.
+
 void fft9c(fftw_complex *x) {
 
   static const double M_SQRT3_2 = 0.86602540378443865e0;

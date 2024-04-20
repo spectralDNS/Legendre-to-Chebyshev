@@ -9,6 +9,8 @@ cdef extern from "../C/leg2cheb.h":
         double* a
         double* dn
         double* an
+        double* lf
+        double* lb
 
     ctypedef struct fmm_plan:
         size_t direction
@@ -26,6 +28,8 @@ cdef extern from "../C/leg2cheb.h":
         double *work
         double **wk
         double **ck
+        double **lf
+        double **lb
         direct_plan* dplan
 
     ctypedef struct fmm_plan_2d:

@@ -58,7 +58,8 @@ typedef struct {
   double *work;
   double **wk;
   double **ck;
-  double **ll;
+  double **lf;
+  double **lb;
   direct_plan *dplan;
 } fmm_plan;
 

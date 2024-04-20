@@ -33,7 +33,8 @@ class fmm_plan(Structure):
                   ("work", doublep),
                   ("wk", doublepp),
                   ("ck", doublepp),
-                  ("ll", doublepp),
+                  ("lf", doublepp),
+                  ("lb", doublepp),
                   ("dplan", POINTER(direct_plan))]
 
 create_fmm = C.create_fmm
