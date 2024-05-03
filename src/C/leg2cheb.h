@@ -15,6 +15,8 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <sys/resource.h>
+#include <errno.h>
 #ifdef OMP
 #include <omp.h>
 #endif

@@ -26,11 +26,11 @@ endif
 
 subdir('C')
 subdir('cython')
-subdir('ctypes')
+#subdir('ctypes')
 subdir('bin')
 subdir('python')
-subdir('multiprec/python')
-subdir('multiprec/C++')
+#subdir('multiprec/python')
+#subdir('multiprec/C++')
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libraries : l2clib,

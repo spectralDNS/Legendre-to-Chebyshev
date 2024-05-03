@@ -8,10 +8,12 @@ size_t max(size_t a, size_t b) { return (a > b) ? a : b; }
 double fmax(double a, double b) { return (a > b) ? a : b; }
 
 void test_forward_backward(size_t N, size_t maxs, size_t M, double m,
-                           size_t random, size_t lagrange, size_t precompute, size_t verbose) {
+                           size_t random, size_t lagrange, size_t precompute,
+                           size_t verbose) {
   if (verbose > 1)
     printf("test_forward_backward\n");
-  fmm_plan *fmmplan = create_fmm(N, maxs, M, BOTH, lagrange, precompute, verbose);
+  fmm_plan *fmmplan =
+      create_fmm(N, maxs, M, BOTH, lagrange, precompute, verbose);
   double *input_array = (double *)calloc(N, sizeof(double));
   double *output_array = (double *)calloc(N, sizeof(double));
 
@@ -43,8 +45,9 @@ void test_forward_backward(size_t N, size_t maxs, size_t M, double m,
   }
 
   double e0 = 0;
-  for (size_t j = 0; j < N; j++)
+  for (size_t j = 0; j < N; j++) {
     e0 = fmax(fabs(ia[j]), e0);
+  }
 
   double ulp = nextafter(e0, 1e8) - e0;
 
@@ -87,6 +90,7 @@ void test_accuracy(size_t N, size_t maxs, size_t M, size_t lagrange,
   for (size_t i = 0; i < 5; i++) {
     error0 += pow(output_array[i] - a[i], 2);
   }
+
   assert(sqrt(error0) < 1e-7);
 
   for (size_t i = 0; i < N; i++)
@@ -115,6 +119,7 @@ void test_accuracy(size_t N, size_t maxs, size_t M, size_t lagrange,
   error0 = 0.0;
   for (size_t i = 0; i < N; i++) {
     error0 += pow(output_array[i] - out[i], 2);
+    //printf("%lu %2.6e\n", i, output_array[i] - out[i]);
   }
 
   // assert(sqrt(error0) < 1e-7);
@@ -177,7 +182,8 @@ void test_speed(size_t N, size_t maxs, size_t repeat, size_t direction,
                 size_t M, size_t lagrange, size_t precompute, size_t verbose) {
   if (verbose > 1)
     printf("test_speed %lu\n", direction);
-  fmm_plan *fmmplan = create_fmm(N, maxs, M, direction, lagrange, precompute, verbose);
+  fmm_plan *fmmplan =
+      create_fmm(N, maxs, M, direction, lagrange, precompute, verbose);
 
   double *input_array = (double *)calloc(N, sizeof(double));
   double *output_array = (double *)calloc(N, sizeof(double));
@@ -357,7 +363,8 @@ void test_forward_backward_2d(size_t N0, size_t N1, size_t maxs,
   srand48(1);
 
   int axis = -1;
-  fmm_plan_2d *fmmplan2d = create_fmm_2d(N0, N1, axis, maxs, 18, 2, 0, 0, verbose);
+  fmm_plan_2d *fmmplan2d =
+      create_fmm_2d(N0, N1, axis, maxs, 18, 2, 0, 0, verbose);
   // Initialize some input array
   for (size_t i = 0; i < N0; i++) {
     for (size_t j = 0; j < N1; j++) {
@@ -385,7 +392,8 @@ void test_forward_backward_2d(size_t N0, size_t N1, size_t maxs,
   free(output_array2);
 }
 
-void test_directM(size_t N, size_t repeat, size_t verbose, size_t s, size_t M, size_t precompute) {
+void test_directM(size_t N, size_t repeat, size_t verbose, size_t s, size_t M,
+                  size_t precompute) {
   fmm_plan *fmmplan = create_fmm(N, s, M, 2, 0, precompute, verbose);
   double *input_array = (double *)calloc(N, sizeof(double));
   double *output_array = (double *)calloc(N, sizeof(double));
@@ -407,8 +415,7 @@ void test_dct0(size_t N, size_t repeat) {
   double *fun = (double *)fftw_malloc(N * sizeof(double));
   double *fun_hat = (double *)fftw_malloc(N * sizeof(double));
 
-  fftw_plan plan =
-      fftw_plan_r2r_1d(N, fun, fun_hat, FFTW_REDFT10, FFTW_PATIENT);
+  fftw_plan plan = fftw_plan_r2r_1d(N, fun, fun_hat, FFTW_REDFT10, FFTW_MEASURE);
 
   double min_time = 1e8;
   for (size_t i = 0; i < N; i++) {
@@ -603,7 +610,7 @@ void test_flops_dct_fftw() {
 }
 
 void test_matvectri(size_t N, size_t repeat, size_t M, size_t lagrange,
-                     size_t precompute, size_t verbose) {
+                    size_t precompute, size_t verbose) {
   fmm_plan *fmmplan = create_fmm(N, 64, M, 2, lagrange, precompute, verbose);
   double *input_array = (double *)calloc(N, sizeof(double));
   double *output_array = (double *)calloc(N, sizeof(double));
@@ -645,7 +652,8 @@ void test_init(size_t N, size_t maxs, size_t repeat, size_t direction, size_t M,
   size_t flops;
   for (size_t i = 0; i < repeat; i++) {
     uint64_t g0 = tic;
-    fmm_plan *fmmplan = create_fmm(N, maxs, M, direction, lagrange, precompute, verbose);
+    fmm_plan *fmmplan =
+        create_fmm(N, maxs, M, direction, lagrange, precompute, verbose);
     double s1 = toc(g0);
     min_time = s1 < min_time ? s1 : min_time;
     free(fmmplan);
@@ -687,7 +695,8 @@ int main(int argc, char *argv[]) {
       "       2 - Test accuracy of one transform back and forth\n"
       "       3 - Test direct transform back and forth\n";
 
-  while ((opt = getopt(argc, argv, ":N:d:s::M::m::r::v::t::p::R::l::h")) != -1) {
+  while ((opt = getopt(argc, argv, ":N:d:s::M::m::r::v::t::p::R::l::h")) !=
+         -1) {
     switch (opt) {
     case 'N':
       N = atoi(optarg);

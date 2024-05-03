@@ -1,9 +1,8 @@
 #include "leg2cheb.h"
 
-size_t lmin(size_t a, size_t b) { return (a > b) ? b : a; }
-
 // Compact storage of lower triangular transform matrix. (18 x 18 + 18) / 2
 // items
+
 const double BMe[171] __attribute__((aligned)) = {
     1.0000000000000000e+00,  -5.0000000000000000e-01, 5.0000000000000000e-01,
     -2.5000000000000000e-01, -1.0000000000000000e+00, 2.5000000000000000e-01,
@@ -158,44 +157,44 @@ size_t direct(const double *u, double *b, direct_plan *dplan, size_t direction,
   for (size_t i = 0; i < N; i++)
     b[i] = 0.0;
   flops += N;
-  // if (dplan->lf == NULL) {
-  if (direction == L2C) {
-    const double *a = dplan->a;
-    for (size_t n = 0; n < N; n = n + 2) {
-      const double *ap = &a[n / 2];
-      const double *cp = &u[n];
-      const double a0 = ap[0] * M_2_PI;
-      for (size_t i = 0; i < N - n; i++) {
-        b[i * strides] += a0 * ap[i] * cp[i];
+  if (dplan->lf == NULL) {
+    if (direction == L2C) {
+      const double *a = dplan->a;
+      for (size_t n = 0; n < N; n = n + 2) {
+        const double *ap = &a[n / 2];
+        const double *cp = &u[n];
+        const double a0 = ap[0] * M_2_PI;
+        for (size_t i = 0; i < N - n; i++) {
+          b[i * strides] += a0 * ap[i] * cp[i];
+        }
+        flops += 3 * (N - n);
       }
-      flops += 3 * (N - n);
+      b[0] /= 2;
+      flops += N;
+    } else {
+      double *vn = (double *)fftw_malloc(N * sizeof(double));
+      const double *an = dplan->an;
+      const double *dn = dplan->dn;
+      vn[0] = u[0];
+      for (size_t i = 1; i < N; i++)
+        vn[i] = u[i * strides] * i;
+
+      for (size_t n = 0; n < N; n++)
+        b[n * strides] = sqrt_pi * vn[n] * an[n];
+
+      for (size_t n = 2; n < N; n = n + 2) {
+        const double *ap = &an[n / 2];
+        const double *vp = &vn[n];
+        for (size_t i = 0; i < N - n; i++)
+          b[i * strides] -= dn[n / 2] * ap[i] * vp[i];
+        flops += 3 * (N - n);
+      }
+      for (size_t i = 0; i < N; i++)
+        b[i * strides] *= (i + 0.5);
+      flops += N;
+      fftw_free(vn);
     }
-    b[0] /= 2;
-    flops += N;
   } else {
-    double *vn = (double *)fftw_malloc(N * sizeof(double));
-    const double *an = dplan->an;
-    const double *dn = dplan->dn;
-    vn[0] = u[0];
-    for (size_t i = 1; i < N; i++)
-      vn[i] = u[i * strides] * i;
-
-    for (size_t n = 0; n < N; n++)
-      b[n * strides] = sqrt_pi * vn[n] * an[n];
-
-    for (size_t n = 2; n < N; n = n + 2) {
-      const double *ap = &an[n / 2];
-      const double *vp = &vn[n];
-      for (size_t i = 0; i < N - n; i++)
-        b[i * strides] -= dn[n / 2] * ap[i] * vp[i];
-      flops += 3 * (N - n);
-    }
-    for (size_t i = 0; i < N; i++)
-      b[i * strides] *= (i + 0.5);
-    flops += N;
-    fftw_free(vn);
-  }
-  /*} else {
     if (direction == L2C) {
       const double *ap = &dplan->lf[0];
       for (size_t n = 0; n < N; n = n + 2) {
@@ -230,7 +229,7 @@ size_t direct(const double *u, double *b, direct_plan *dplan, size_t direction,
       flops += N;
       fftw_free(vn);
     }
-  }*/
+  }
   return flops;
 }
 
@@ -238,10 +237,10 @@ size_t directM(const double *input_array, double *output_array,
                fmm_plan *fmmplan, const size_t strides) {
   size_t s = fmmplan->s;
   size_t N = fmmplan->N;
-  const double *a = fmmplan->dplan->a;
   size_t flops = 0;
   size_t h = 2 * s;
   size_t nL = N / h;
+  const double *a = fmmplan->dplan->a;
 
   if (fmmplan->lf == NULL) {
     for (size_t block = 0; block < nL - 1; block++) {
@@ -635,20 +634,6 @@ void vandermonde(double *T, const size_t h, const size_t N) {
   fftw_free(Tm);
 }
 
-double sum(const double *a, const size_t N) {
-  double x = 0;
-  for (size_t i = 0; i < N; i++)
-    x += a[i];
-  return x;
-}
-
-double norm(const double *a, const size_t N) {
-  double x = 0;
-  for (size_t i = 0; i < N; i++)
-    x += a[i] * a[i];
-  return x;
-}
-
 void free_direct(direct_plan *plan) {
   if (plan->a != NULL) {
     fftw_free(plan->a);
@@ -670,7 +655,7 @@ void free_direct(direct_plan *plan) {
     fftw_free(plan->lb);
     plan->lb = NULL;
   }
-  fftw_free(plan);
+  free(plan);
   plan = NULL;
 }
 
@@ -683,7 +668,7 @@ void free_fmm_2d(fmm_plan_2d *plan) {
   } else if (plan->fmmplan1 != NULL) {
     free_fmm(plan->fmmplan1);
   }
-  fftw_free(plan);
+  free(plan);
   plan = NULL;
 }
 
@@ -697,7 +682,7 @@ void free_fmm(fmm_plan *plan) {
     plan->A[1] = NULL;
   }
   if (plan->A != NULL) {
-    fftw_free(plan->A);
+    free(plan->A);
     plan->A = NULL;
   }
   if (plan->T != NULL) {
@@ -753,12 +738,12 @@ void free_fmm(fmm_plan *plan) {
   if (plan->dplan != NULL) {
     free_direct(plan->dplan);
   }
-  fftw_free(plan);
+  free(plan);
   plan = NULL;
 }
 
 direct_plan *create_direct(size_t N, size_t direction, size_t precompute) {
-  direct_plan *dplan = (direct_plan *)fftw_malloc(sizeof(direct_plan));
+  direct_plan *dplan = (direct_plan *)malloc(sizeof(direct_plan));
   double *a = (double *)fftw_malloc(N * sizeof(double));
   dplan->a = a;
   dplan->an = NULL;
@@ -770,36 +755,21 @@ direct_plan *create_direct(size_t N, size_t direction, size_t precompute) {
   for (size_t i = 0; i < N0; i++) // Integer, precomputed values
     a[i] = LambdaI(i);
   size_t DN = 8;
-  // size_t maxulp = 0;
-  // double maxabs = 0.0;
-  // double maxrel = 0.0;
   for (size_t i = N0; i < N; i += DN) {
     a[i] = LambdaI(i);
-    // printf("i %d %d\n", i, maxulp);
     size_t J0 = i + DN < N ? i + DN : N;
     for (size_t j = i + 1; j < J0; j++) {
       // a[j] = a[j - 1] * (1 - 0.5 / j);
       // a[j] = ((j << 1) -1) * a[j - 1] / (j << 1) ;
       a[j] = a[j - 1] - 0.5 * a[j - 1] / j;
-
-      // double s0 = LambdaI(j);
-      // int ulp = (int)((a[j] - s0) / (nexttoward(a[j], 10) - a[j]));
-      // maxulp = (abs(ulp) > maxulp) ? abs(ulp) : maxulp;
-      // maxabs = (fabs(a[j] - s0) > maxabs) ? (fabs(a[j] - s0)) : maxabs;
-      // maxrel =
-      //     (fabs((a[j] - s0) / s0) > maxrel) ? (fabs((a[j] - s0) / s0)) :
-      //     maxrel;
-      // printf("%d  %2.16e  %2.16e %2.16e %2.16e %d %d \n", j, a[j], s0,
-      //         fabs(a[j] - s0), fabs((a[j] - s0) / s0), ulp, maxulp);
     }
   }
-  // printf("%2.16e %2.16e %d  \n", maxrel, maxabs, maxulp);
 
   if ((direction == C2L) | (direction == BOTH)) {
     double *dn = (double *)fftw_malloc((N + 1) / 2 * sizeof(double));
     double *an = (double *)fftw_malloc(N * sizeof(double));
     dn[0] = 0;
-    an[0] = M_2_SQRTPI; // 0.88622692545275801364908374167e0;
+    an[0] = M_2_SQRTPI;
     // Using Lambda(i-0.5) = 1/(i*Lambda(i))
     for (size_t i = 1; i < N; i++) {
       an[i] = 1 / (a[i] * (2 * i * i + i));
@@ -1254,7 +1224,7 @@ fmm_plan *create_fmm(const size_t N, const size_t maxs, const size_t M,
 fmm_plan_2d *create_fmm_2d(size_t N0, size_t N1, int axis, size_t maxs,
                            size_t M, size_t direction, size_t lagrange,
                            size_t precompute, size_t v) {
-  fmm_plan_2d *fmmplan2d = (fmm_plan_2d *)fftw_malloc(sizeof(fmm_plan_2d));
+  fmm_plan_2d *fmmplan2d = (fmm_plan_2d *)malloc(sizeof(fmm_plan_2d));
   fmmplan2d->fmmplan0 = NULL;
   fmmplan2d->fmmplan1 = NULL;
   if (v > 1) {
