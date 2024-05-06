@@ -15,7 +15,9 @@ jobs:
         os: [ubuntu-latest, macOS-latest]
         python-version: ["3.8", "3.9", "3.10", "3.11"]
     name: Python ${{ matrix.python-version }} example
-
+    defaults:
+      run:
+        shell: bash -el {0}
     steps:
     - uses: actions/checkout@v4
     - uses: conda-incubator/setup-miniconda@v3
