@@ -27,6 +27,7 @@ jobs:
           auto-activate-base: false
     - run: |
         cd src
+        conda init
         conda activate l2c
         meson setup build --prefix=$PWD/build-install --includedir=$CONDA_PREFIX/include --libdir=$CONDA_PREFIX/lib
         export PYTHONPATH=$PYTHONPATH:$PWD/build-install/lib/python${{ matrix.python-version }}/site-packages
