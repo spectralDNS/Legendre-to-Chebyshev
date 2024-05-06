@@ -25,9 +25,9 @@ jobs:
           environment-file: environment.yml
           python-version: ${{ matrix.python-version }}
           auto-activate-base: false
-          always-yes: true
     - run: |
         cd src
+        source activate l2c
         meson setup build --prefix=$PWD/build-install --includedir=$CONDA_PREFIX/include --libdir=$CONDA_PREFIX/lib
         export PYTHONPATH=$PYTHONPATH:$PWD/build-install/lib/python${{ matrix.python-version }}/site-packages
         export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/build-install/lib
