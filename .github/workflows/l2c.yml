@@ -14,6 +14,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, macOS-latest]
         python-version: ["3.8", "3.9", "3.10", "3.11"]
+    defaults:
+      run:
+        shell: bash -el {0}
     name: Python ${{ matrix.python-version }} example
 
     steps:
@@ -25,10 +28,12 @@ jobs:
           environment-file: environment.yml
           python-version: ${{ matrix.python-version }}
           auto-activate-base: true
-    - run: |
+    - name: init 
+      run: |
         conda init
         conda env list
-    - run: |
+    - name: install and test
+      run: |  
         cd src
         conda activate l2c
         meson setup build --prefix=$PWD/build-install --includedir=$CONDA_PREFIX/include --libdir=$CONDA_PREFIX/lib
