@@ -49,16 +49,17 @@ inline static double _LambdaE1400(const double z) {
 }
 
 double _LambdaE(const double z) {
+  if (z < 16)
+    return _LambdaE(z+1)*(z+1)/(z+0.5);
+
   if (z > 1400) {
     return _LambdaE1400(z);
   } else if (z > 128) {
     return _LambdaE128(z);
   } else if (z > 32) {
     return _LambdaE32(z);
-  } else if (z > 16) {
-    return _LambdaE16(z);
   }
-  return _Lambda0(z);
+  return _LambdaE16(z);
 }
 
 double Lambda(const double z) {
@@ -66,6 +67,9 @@ double Lambda(const double z) {
   const double zp = z + 0.25;
   const double s = 1 / sqrt(zp);
   const double z2 = 1 / (zp * zp);
+
+  if (z < 10)
+    return Lambda(z+1)*(z+1)/(z+0.5);
 
   y = 1 - 1.5625e-02 * z2;
   if (z > 2014) // 2000
@@ -88,9 +92,7 @@ double Lambda(const double z) {
     goto scalereturn;
   zz *= z2;
   y += 6.754237533641572e-03 * zz;
-  if (z > 10)
-    goto scalereturn;
-  return _Lambda0(z);
+  goto scalereturn;
 scalereturn:
   return y * s;
 }

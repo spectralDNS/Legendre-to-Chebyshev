@@ -101,6 +101,8 @@ size_t get_total_number_of_submatrices(const size_t L);
 void get_ij(size_t *ij, const size_t level, const size_t block, const size_t s,
             const size_t L);
 
+double _Lambda0(const double z);
+double _LambdaE(const double z);
 double Lambda(const double z);
 double LambdaI(const size_t z);
 void Lambdavec(const double *z, double *w, const size_t N);

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-model=0
+model=1
 s0=64
 
 # Loop through input arguments n=2 to n=10

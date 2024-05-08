@@ -1,7 +1,7 @@
 #!/bin/bash
 
-model=0
-s=32
+model=1
+s=64
 
 output=$(l2c -N256 -d9 -r100000 -s32 -l$model -v0)
 number=$(echo "$output" | awk '{print $11}')

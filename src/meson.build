@@ -9,7 +9,6 @@ cy = meson.get_compiler('cython')
 cpp = meson.get_compiler('cpp')
 cython = find_program(cy.cmd_array()[0])
 
-
 cblas = dependency('openblas')
 fftw = dependency('fftw3')
 omp = dependency('openmp', required : false)
@@ -26,11 +25,11 @@ endif
 
 subdir('C')
 subdir('cython')
-#subdir('ctypes')
+subdir('ctypes')
 subdir('bin')
 subdir('python')
-#subdir('multiprec/python')
-#subdir('multiprec/C++')
+subdir('multiprec/python')
+subdir('multiprec/C++')
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libraries : l2clib,

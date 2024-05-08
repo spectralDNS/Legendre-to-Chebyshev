@@ -75,7 +75,7 @@ void test_accuracy(size_t N, size_t maxs, size_t M, size_t lagrange,
 
   assert(N < 1000);
   if (verbose > 1)
-    printf("test_accuracy N=20 direct and N=%d FMM\n", N);
+    printf("test_accuracy N=20 direct and N=%ld FMM\n", N);
   fmm_plan *fmmplan = create_fmm(20, maxs, M, BOTH, lagrange, precompute, 1);
 
   double *input_array = (double *)calloc(N, sizeof(double));
@@ -119,7 +119,7 @@ void test_accuracy(size_t N, size_t maxs, size_t M, size_t lagrange,
   error0 = 0.0;
   for (size_t i = 0; i < N; i++) {
     error0 += pow(output_array[i] - out[i], 2);
-    //printf("%lu %2.6e\n", i, output_array[i] - out[i]);
+    // printf("%lu %2.6e\n", i, output_array[i] - out[i]);
   }
 
   // assert(sqrt(error0) < 1e-7);
@@ -135,7 +135,7 @@ void test_accuracy(size_t N, size_t maxs, size_t M, size_t lagrange,
   // assert(sqrt(error1) < 1e-7);
 
   if (verbose > 1)
-    printf("FMM   N=%d Error L2C: %2.6e C2L: %2.6e\n", N, sqrt(error0),
+    printf("FMM   N=%ld Error L2C: %2.6e C2L: %2.6e\n", N, sqrt(error0),
            sqrt(error1));
 
   // Test only planning one direction
@@ -166,7 +166,7 @@ void test_accuracy(size_t N, size_t maxs, size_t M, size_t lagrange,
   // assert(sqrt(error1) < 1e-7);
 
   if (verbose > 1)
-    printf("FMM   N=%d Error L2C: %2.6e C2L: %2.6e (plan one direction)\n", N,
+    printf("FMM   N=%ld Error L2C: %2.6e C2L: %2.6e (plan one direction)\n", N,
            sqrt(error0), sqrt(error1));
 
   free(out);
@@ -415,7 +415,8 @@ void test_dct0(size_t N, size_t repeat) {
   double *fun = (double *)fftw_malloc(N * sizeof(double));
   double *fun_hat = (double *)fftw_malloc(N * sizeof(double));
 
-  fftw_plan plan = fftw_plan_r2r_1d(N, fun, fun_hat, FFTW_REDFT10, FFTW_MEASURE);
+  fftw_plan plan =
+      fftw_plan_r2r_1d(N, fun, fun_hat, FFTW_REDFT10, FFTW_MEASURE);
 
   double min_time = 1e8;
   for (size_t i = 0; i < N; i++) {
@@ -429,7 +430,7 @@ void test_dct0(size_t N, size_t repeat) {
     double s1 = toc(g0);
     min_time = s1 < min_time ? s1 : min_time;
   }
-  printf("Time %2.6e %2.6e N = %d\n", min_time, toc(t0) / repeat, N);
+  printf("Time %2.6e %2.6e N = %ld\n", min_time, toc(t0) / repeat, N);
   fftw_free(fun);
   fftw_free(fun_hat);
   fftw_destroy_plan(plan);
@@ -456,19 +457,16 @@ void test_dct(size_t N, size_t repeat) {
     double s1 = toc(g0);
     min_time = s1 < min_time ? s1 : min_time;
   }
-  printf("Time avg fftw %2.6e %2.6e N = %d\n", min_time, toc(t0) / repeat, N);
+  printf("Time avg fftw %2.6e %2.6e N = %ld\n", min_time, toc(t0) / repeat, N);
 
   double add, mul, fma;
   fftw_flops(plan, &add, &mul, &fma);
-  printf("N %d Flops %f\n", N, add + mul + 2 * fma);
+  printf("N %ld Flops %f\n", N, add + mul + 2 * fma);
 
-  double fun2[18], fun3[324];
-  double fun_hat2[18], fun_hat3[324];
+  double fun2[18];
+  double fun_hat2[18];
   for (size_t i = 0; i < 18; i++) {
     fun2[i] = i * i;
-    for (size_t j = 0; j < 18; j++) {
-      fun3[i * 18 + j] = i + j;
-    }
   }
   dct(fun2, fun_hat, 1);
   dct_radix23(fun2, fun_hat2, 1);
@@ -550,7 +548,7 @@ void test_dct(size_t N, size_t repeat) {
     err +=
         pow(creal(xh[i]) - creal(x[i]), 2) + pow(cimag(xh[i]) - cimag(x[i]), 2);
   }
-  printf("Error fft9 %2.6e %2.6e \n", err);
+  printf("Error fft9 %2.6e \n", err);
 
   t0 = tic;
   min_time2 = 1e8;
@@ -605,7 +603,7 @@ void test_flops_dct_fftw() {
         fftw_plan_r2r_1d(N, fun, fun_hat, FFTW_REDFT10, FFTW_MEASURE);
 
     fftw_flops(plan, &add, &mul, &fma);
-    printf("%d %8.2f %8.2f \n", N, (add + mul + 2 * fma), 2 * N * log2(N));
+    printf("%ld %8.2f %8.2f \n", N, (add + mul + 2 * fma), 2 * N * log2(N));
   }
 }
 
@@ -663,9 +661,26 @@ void test_init(size_t N, size_t maxs, size_t repeat, size_t direction, size_t M,
          dtics(t0, t1) / repeat, min_time);
 }
 
+void test_lambda(size_t verbose) {
+  const double z0[3] = {1.7724538509055161e+00, 8.8622692545275805e-01, 6.6467019408956851e-01};
+  assert(fabs(Lambda(0) - z0[0]) < 1e-15);
+  assert(fabs(Lambda(1) - z0[1]) < 1e-15);
+  assert(fabs(Lambda(2) - z0[2]) < 1e-15);
+  assert(fabs(Lambda(14.5) - _LambdaE(14.5)) < 1e-15);
+  if (verbose > 1) {
+    double ulp = nextafter(Lambda(24.5), 1e8)-Lambda(24.5);
+    double err = Lambda(24.5) - _LambdaE(24.5);
+    printf("Lambda(24.5)       = %2.18e\n", Lambda(24.5));
+    printf("_Lambda0(24.5)     = %2.18e\n", _Lambda0(24.5));
+    printf("LambdaE(24.5)      = %2.18e\n", _LambdaE(24.5));
+    printf("Lambda(24.5) exact = %2.18e\n", 0.20100243720317808186742632);
+    printf("Error Lambda(24.5) = %2.6e, ulp = %2.6e, err = %2.1f ulp\n", err, ulp, err/ulp);
+  }
+}
+
 int main(int argc, char *argv[]) {
   int opt;
-  size_t N;
+  size_t N = 512;
   size_t maxs = 64;
   size_t verbose = 2;
   size_t num_threads = 1;
@@ -675,7 +690,7 @@ int main(int argc, char *argv[]) {
   double m = 0;
   size_t precompute = 0;
   size_t repeat = 1;
-  unsigned direction;
+  size_t direction = 0;
   char *help =
       "Usage: ./l2c options\n"
       "  -h      Show this message\n"
@@ -783,6 +798,10 @@ int main(int argc, char *argv[]) {
 
   case 10:
     test_flops_dct_fftw();
+    break;
+
+  case 11:
+    test_lambda(verbose);
     break;
 
   default:
