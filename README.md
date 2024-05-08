@@ -8,6 +8,8 @@ This is first and foremost the implementation of a Fast Multipole Method similar
 
   * B. K. Alpert and V. Rokhlin, A fast algorithm for the evaluation of legendre expansions, 389 SIAM Journal on Scientific and Statistical Computing, 12 (1991), pp. 158–179, https://doi.390org/10.1137/0912009.391
 
+The implemented method is described in the preprint [A faster Legendre-to-Chebyshev transform](https://github.com/spectralDNS/Legendre-to-Chebyshev/FMM_paper.pdf).
+
 There are several implementations in the src directory:
   * python - A short, vectorized Python implementation
   * C - An efficient C implementation
