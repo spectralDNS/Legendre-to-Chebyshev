@@ -414,8 +414,8 @@ void test_directM(size_t N, size_t repeat, size_t verbose, size_t s, size_t M,
 void test_dct0(size_t N, size_t repeat) {
   double *fun = (double *)fftw_malloc(N * sizeof(double));
   double *fun_hat = (double *)fftw_malloc(N * sizeof(double));
-  
-#ifdef OMP 
+
+#ifdef OMP
   fftw_init_threads();
   fftw_plan_with_nthreads(omp_get_max_threads());
 #endif
@@ -435,7 +435,8 @@ void test_dct0(size_t N, size_t repeat) {
     double s1 = toc(g0);
     min_time = s1 < min_time ? s1 : min_time;
   }
-  printf("Time N = %ld avg / min = %2.6e / %2.6e \n", N, toc(t0) / repeat, min_time);
+  printf("Time N = %ld avg / min = %2.6e / %2.6e \n", N, toc(t0) / repeat,
+         min_time);
   fftw_free(fun);
   fftw_free(fun_hat);
   fftw_destroy_plan(plan);
@@ -632,8 +633,8 @@ void test_matvectri(size_t N, size_t repeat, size_t M, size_t lagrange,
         for (size_t block = 0; block < get_number_of_blocks(level + 1) - 1;
              block++) {
           if (lagrange == 0) {
-            matvectri(&fmmplan->BT[0], &c0[block * M], &c1[block * 2 * M],
-                      M, true);
+            matvectri(&fmmplan->BT[0], &c0[block * M], &c1[block * 2 * M], M,
+                      true);
           } else {
             cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &fmmplan->B[0], M,
                         &c0[block * M], 1, 1, &c1[block * 2 * M], 1);
@@ -705,10 +706,8 @@ void test_openmp(size_t N, size_t repeat, size_t verbose) {
   for (size_t i = 0; i < repeat; i++) {
     uint64_t r0 = tic;
 #pragma omp parallel for
-    {
-      for (size_t i = 0; i < N; i++)
-        output_array[i] = input_array[i] * M_2_PI;
-    }
+    for (size_t i = 0; i < N; i++)
+      output_array[i] = input_array[i] * M_2_PI;
     double s1 = toc(r0);
     min_time = s1 < min_time ? s1 : min_time;
   }
@@ -725,7 +724,7 @@ void test_openmp2(size_t N, size_t repeat, size_t lagrange, size_t verbose) {
   const size_t K = get_number_of_blocks(fmmplan->L - 1) * 2;
   double min_time = 1e8;
   uint64_t t0 = tic;
-//#pragma omp parallel for
+  // #pragma omp parallel for
   {
     for (size_t i = 0; i < repeat; i++) {
       uint64_t r0 = tic;

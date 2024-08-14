@@ -244,41 +244,39 @@ size_t directM(const double *input_array, double *output_array,
 
   if (fmmplan->lf == NULL) {
 #pragma omp parallel for reduction(+ : flops)
-    {
-      for (size_t block = 0; block < nL - 1; block++) {
-        size_t i0 = block * h;
-        for (size_t n = 0; n < 4 * s; n = n + 2) {
-          const size_t n1 = n / 2;
-          const double *ap = &a[i0 + n1];
-          const double a0 = a[n1];
-          size_t i;
-          if (strides == 1) {
-            double *vp = &output_array[i0];
-            const double *up = &input_array[i0 + n];
-            if (n < h) {
-              for (i = 0; i < h; i++) {
-                vp[i] += a0 * ap[i] * up[i];
-              }
-            } else {
-              for (i = 0; i < 2 * h - n; i++) {
-                vp[i] += a0 * ap[i] * up[i];
-              }
+    for (size_t block = 0; block < nL - 1; block++) {
+      size_t i0 = block * h;
+      for (size_t n = 0; n < 4 * s; n = n + 2) {
+        const size_t n1 = n / 2;
+        const double *ap = &a[i0 + n1];
+        const double a0 = a[n1];
+        size_t i;
+        if (strides == 1) {
+          double *vp = &output_array[i0];
+          const double *up = &input_array[i0 + n];
+          if (n < h) {
+            for (i = 0; i < h; i++) {
+              vp[i] += a0 * ap[i] * up[i];
             }
           } else {
-            double *vp = &output_array[i0 * strides];
-            const double *up = &input_array[(i0 + n) * strides];
-            if (n < h) {
-              for (i = 0; i < h; i++) {
-                vp[i * strides] += a0 * ap[i] * up[i * strides];
-              }
-            } else {
-              for (i = 0; i < 2 * h - n; i++) {
-                vp[i * strides] += a0 * ap[i] * up[i * strides];
-              }
+            for (i = 0; i < 2 * h - n; i++) {
+              vp[i] += a0 * ap[i] * up[i];
             }
           }
-          flops += i * 3;
+        } else {
+          double *vp = &output_array[i0 * strides];
+          const double *up = &input_array[(i0 + n) * strides];
+          if (n < h) {
+            for (i = 0; i < h; i++) {
+              vp[i * strides] += a0 * ap[i] * up[i * strides];
+            }
+          } else {
+            for (i = 0; i < 2 * h - n; i++) {
+              vp[i * strides] += a0 * ap[i] * up[i * strides];
+            }
+          }
         }
+        flops += i * 3;
       }
     }
 
@@ -304,39 +302,37 @@ size_t directM(const double *input_array, double *output_array,
     }
   } else {
 #pragma omp parallel for reduction(+ : flops)
-    {
-      for (size_t block = 0; block < nL - 1; block++) {
-        size_t i0 = block * h;
-        const double *ap = &fmmplan->lf[block][0];
-        for (size_t n = 0; n < 4 * s; n = n + 2) {
-          size_t i;
-          if (strides == 1) {
-            double *vp = &output_array[i0];
-            const double *up = &input_array[i0 + n];
-            if (n < h) {
-              for (i = 0; i < h; i++) {
-                vp[i] += (*ap++) * up[i];
-              }
-            } else {
-              for (i = 0; i < 2 * h - n; i++) {
-                vp[i] += (*ap++) * up[i];
-              }
+    for (size_t block = 0; block < nL - 1; block++) {
+      size_t i0 = block * h;
+      const double *ap = &fmmplan->lf[block][0];
+      for (size_t n = 0; n < 4 * s; n = n + 2) {
+        size_t i;
+        if (strides == 1) {
+          double *vp = &output_array[i0];
+          const double *up = &input_array[i0 + n];
+          if (n < h) {
+            for (i = 0; i < h; i++) {
+              vp[i] += (*ap++) * up[i];
             }
           } else {
-            double *vp = &output_array[i0 * strides];
-            const double *up = &input_array[(i0 + n) * strides];
-            if (n < h) {
-              for (i = 0; i < h; i++) {
-                vp[i * strides] += (*ap++) * up[i * strides];
-              }
-            } else {
-              for (i = 0; i < 2 * h - n; i++) {
-                vp[i * strides] += (*ap++) * up[i * strides];
-              }
+            for (i = 0; i < 2 * h - n; i++) {
+              vp[i] += (*ap++) * up[i];
             }
           }
-          flops += i * 2;
+        } else {
+          double *vp = &output_array[i0 * strides];
+          const double *up = &input_array[(i0 + n) * strides];
+          if (n < h) {
+            for (i = 0; i < h; i++) {
+              vp[i * strides] += (*ap++) * up[i * strides];
+            }
+          } else {
+            for (i = 0; i < 2 * h - n; i++) {
+              vp[i * strides] += (*ap++) * up[i * strides];
+            }
+          }
         }
+        flops += i * 2;
       }
     }
 
@@ -394,61 +390,56 @@ size_t directL(const double *input, double *output_array, fmm_plan *fmmplan,
   const double *ap = &an[0];
   if (strides == 1) {
 #pragma omp parallel for
-    {
-      for (size_t i = 0; i < N; i++)
-        op[i] += sqrt_pi * ia[i] * ap[i];
-    }
+    for (size_t i = 0; i < N; i++)
+      op[i] += sqrt_pi * ia[i] * ap[i];
   } else {
 #pragma omp parallel for
-    {
-      for (size_t i = 0; i < N; i++) {
-        op[i * strides] += sqrt_pi * ia[i] * ap[i];
-      }
+    for (size_t i = 0; i < N; i++) {
+      op[i * strides] += sqrt_pi * ia[i] * ap[i];
     }
   }
   flops += N * 3;
 
   if (fmmplan->dplan->lb == NULL) {
 #pragma omp parallel for reduction(+ : flops)
-    {
-      for (size_t block = 0; block < nL - 1; block++) {
-        size_t i0 = block * h;
-        for (size_t n = 2; n < 4 * s; n = n + 2) {
-          const size_t n1 = n / 2;
-          const double *ap = &an[i0 + n1];
-          const double d0 = dn[n1];
-          size_t i;
-          if (strides == 1) {
-            double *vp = &output_array[i0];
-            const double *ia = &input[i0 + n];
-            if (n < h) {
-              for (i = 0; i < h; i++) {
-                (*vp++) -= d0 * (*ia++) * (*ap++);
-              }
-            } else {
-              for (i = 0; i < 2 * h - n; i++) {
-                (*vp++) -= d0 * (*ia++) * (*ap++);
-              }
+    for (size_t block = 0; block < nL - 1; block++) {
+      size_t i0 = block * h;
+      for (size_t n = 2; n < 4 * s; n = n + 2) {
+        const size_t n1 = n / 2;
+        const double *ap = &an[i0 + n1];
+        const double d0 = dn[n1];
+        size_t i;
+        if (strides == 1) {
+          double *vp = &output_array[i0];
+          const double *ia = &input[i0 + n];
+          if (n < h) {
+            for (i = 0; i < h; i++) {
+              (*vp++) -= d0 * (*ia++) * (*ap++);
             }
           } else {
-            double *vp = &output_array[i0 * strides];
-            const double *ia = &input[i0 + n];
-            if (n < h) {
-              for (i = 0; i < h; i++) {
-                (*vp) -= d0 * (*ia++) * (*ap++);
-                vp += strides;
-              }
-            } else {
-              for (i = 0; i < 2 * h - n; i++) {
-                (*vp) -= d0 * (*ia++) * (*ap++);
-                vp += strides;
-              }
+            for (i = 0; i < 2 * h - n; i++) {
+              (*vp++) -= d0 * (*ia++) * (*ap++);
             }
           }
-          flops += i * 3;
+        } else {
+          double *vp = &output_array[i0 * strides];
+          const double *ia = &input[i0 + n];
+          if (n < h) {
+            for (i = 0; i < h; i++) {
+              (*vp) -= d0 * (*ia++) * (*ap++);
+              vp += strides;
+            }
+          } else {
+            for (i = 0; i < 2 * h - n; i++) {
+              (*vp) -= d0 * (*ia++) * (*ap++);
+              vp += strides;
+            }
+          }
         }
+        flops += i * 3;
       }
     }
+
     // Last block
     size_t i0 = (nL - 1) * h;
     for (size_t n = 1; n < N - i0; n++) {
@@ -469,43 +460,42 @@ size_t directL(const double *input, double *output_array, fmm_plan *fmmplan,
     }
   } else {
 #pragma omp parallel for reduction(+ : flops)
-    {
-      for (size_t block = 0; block < nL - 1; block++) {
-        size_t i0 = block * h;
-        const double *ap = &fmmplan->lb[block][0];
-        for (size_t n = 2; n < 4 * s; n = n + 2) {
-          size_t i;
-          if (strides == 1) {
-            double *vp = &output_array[i0];
-            const double *ia = &input[i0 + n];
-            if (n < h) {
-              for (i = 0; i < h; i++) {
-                (*vp++) -= (*ia++) * (*ap++);
-              }
-            } else {
-              for (i = 0; i < 2 * h - n; i++) {
-                (*vp++) -= (*ia++) * (*ap++);
-              }
+    for (size_t block = 0; block < nL - 1; block++) {
+      size_t i0 = block * h;
+      const double *ap = &fmmplan->lb[block][0];
+      for (size_t n = 2; n < 4 * s; n = n + 2) {
+        size_t i;
+        if (strides == 1) {
+          double *vp = &output_array[i0];
+          const double *ia = &input[i0 + n];
+          if (n < h) {
+            for (i = 0; i < h; i++) {
+              (*vp++) -= (*ia++) * (*ap++);
             }
           } else {
-            double *vp = &output_array[i0 * strides];
-            const double *ia = &input[i0 + n];
-            if (n < h) {
-              for (i = 0; i < h; i++) {
-                (*vp) -= (*ia++) * (*ap++);
-                vp += strides;
-              }
-            } else {
-              for (i = 0; i < 2 * h - n; i++) {
-                (*vp) -= (*ia++) * (*ap++);
-                vp += strides;
-              }
+            for (i = 0; i < 2 * h - n; i++) {
+              (*vp++) -= (*ia++) * (*ap++);
             }
           }
-          flops += i * 2;
+        } else {
+          double *vp = &output_array[i0 * strides];
+          const double *ia = &input[i0 + n];
+          if (n < h) {
+            for (i = 0; i < h; i++) {
+              (*vp) -= (*ia++) * (*ap++);
+              vp += strides;
+            }
+          } else {
+            for (i = 0; i < 2 * h - n; i++) {
+              (*vp) -= (*ia++) * (*ap++);
+              vp += strides;
+            }
+          }
         }
+        flops += i * 2;
       }
     }
+
     // Last block
     size_t i0 = (nL - 1) * h;
     const double *ap = &fmmplan->lb[nL - 1][0];
@@ -530,17 +520,14 @@ size_t directL(const double *input, double *output_array, fmm_plan *fmmplan,
   op = &output_array[0];
   if (strides == 1) {
 #pragma omp parallel for
-    {
-      for (size_t i = 0; i < N; i++) {
-        op[i] *= (i + 0.5);
-      }
+    for (size_t i = 0; i < N; i++) {
+      op[i] *= (i + 0.5);
     }
   } else {
 #pragma omp parallel for
-    {
-      for (size_t i = 0; i < N; i++) {
-        op[i * strides] *= (i + 0.5);
-      }
+
+    for (size_t i = 0; i < N; i++) {
+      op[i * strides] *= (i + 0.5);
     }
   }
   flops += 2 * N;
@@ -1350,10 +1337,8 @@ size_t execute(const double *input_array, double *output_array,
   for (size_t odd = 0; odd < 2; odd++) {
 
 #pragma omp parallel for
-    {
-      for (size_t i = 0; i < Nn / 2; i++) {
-        oa[i] = 0.0;
-      }
+    for (size_t i = 0; i < Nn / 2; i++) {
+      oa[i] = 0.0;
     }
 
     memset(&wk[0][0], 0,
@@ -1402,15 +1387,13 @@ size_t execute(const double *input_array, double *output_array,
         double *w1 = wk[level - 1];
         double *w2 = wk[level];
 #pragma omp parallel for
-        {
-          for (size_t block = 1; block < get_number_of_blocks(level); block++) {
-            size_t Nd = block * 2 * M;
-            const double *wq = &w2[Nd];
-            int b0 = (block - 1) / 2;
-            int q0 = (block - 1) % 2;
-            matvectri(&B[0], wq, &w1[(b0 * 2 + q0) * M], M, false);
-            // flops += MM; //+2*M;
-          }
+        for (size_t block = 1; block < get_number_of_blocks(level); block++) {
+          size_t Nd = block * 2 * M;
+          const double *wq = &w2[Nd];
+          int b0 = (block - 1) / 2;
+          int q0 = (block - 1) % 2;
+          matvectri(&B[0], wq, &w1[(b0 * 2 + q0) * M], M, false);
+          // flops += MM; //+2*M;
         }
         flops += (get_number_of_blocks(level) - 1) * MM;
       }
@@ -1419,17 +1402,15 @@ size_t execute(const double *input_array, double *output_array,
         double *w1 = wk[level - 1];
         double *wq = wk[level];
 #pragma omp parallel for
-        {
-          for (size_t block = 1; block < get_number_of_blocks(level); block++) {
-            const size_t Nd = block * 2 * M;
-            int b0 = (block - 1) / 2;
-            int q0 = (block - 1) % 2;
-            cblas_dgemv(CblasRowMajor, CblasTrans, M, M, 1, &B[0], M, &wq[Nd],
-                        1, 0, &w1[(b0 * 2 + q0) * M], 1);
-            cblas_dgemv(CblasRowMajor, CblasTrans, M, M, 1, &B[MM], M,
-                        &wq[Nd + M], 1, 1, &w1[(b0 * 2 + q0) * M], 1);
-            // flops += 4 * MM;
-          }
+        for (size_t block = 1; block < get_number_of_blocks(level); block++) {
+          const size_t Nd = block * 2 * M;
+          int b0 = (block - 1) / 2;
+          int q0 = (block - 1) % 2;
+          cblas_dgemv(CblasRowMajor, CblasTrans, M, M, 1, &B[0], M, &wq[Nd], 1,
+                      0, &w1[(b0 * 2 + q0) * M], 1);
+          cblas_dgemv(CblasRowMajor, CblasTrans, M, M, 1, &B[MM], M,
+                      &wq[Nd + M], 1, 1, &w1[(b0 * 2 + q0) * M], 1);
+          // flops += 4 * MM;
         }
         flops += (get_number_of_blocks(level) - 1) * 4 * MM;
       }
@@ -1440,17 +1421,15 @@ size_t execute(const double *input_array, double *output_array,
       double *cp = ck[level];
       const double *wq = wk[level];
 #pragma omp parallel for
-      {
-        for (size_t block = 0; block < get_number_of_blocks(level); block++) {
-          size_t Nd = block * 2 * M;
-          size_t ik = block * 3;
-          cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &ap[ik * MM], M,
-                      &wq[Nd], 1, 0, &cp[Nd], 1);
-          cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &ap[(ik + 1) * MM],
-                      M, &wq[Nd + M], 1, 1, &cp[Nd], 1);
-          cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &ap[(ik + 2) * MM],
-                      M, &wq[Nd + M], 1, 0, &cp[Nd + M], 1);
-        }
+      for (size_t block = 0; block < get_number_of_blocks(level); block++) {
+        size_t Nd = block * 2 * M;
+        size_t ik = block * 3;
+        cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &ap[ik * MM], M,
+                    &wq[Nd], 1, 0, &cp[Nd], 1);
+        cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &ap[(ik + 1) * MM], M,
+                    &wq[Nd + M], 1, 1, &cp[Nd], 1);
+        cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &ap[(ik + 2) * MM], M,
+                    &wq[Nd + M], 1, 0, &cp[Nd + M], 1);
       }
     }
     flops += get_total_number_of_submatrices(L) * 2 * MM;
@@ -1460,12 +1439,10 @@ size_t execute(const double *input_array, double *output_array,
         double *c0 = ck[level];
         double *c1 = ck[level + 1];
 #pragma omp parallel for
-        {
-          for (size_t block = 0; block < get_number_of_blocks(level + 1) - 1;
-               block++) {
-            matvectri(&BT[0], &c0[block * M], &c1[block * 2 * M], M, true);
-            // flops += MM;
-          }
+        for (size_t block = 0; block < get_number_of_blocks(level + 1) - 1;
+             block++) {
+          matvectri(&BT[0], &c0[block * M], &c1[block * 2 * M], M, true);
+          // flops += MM;
         }
         flops += (get_number_of_blocks(level + 1) - 1) * MM;
       }
@@ -1475,15 +1452,13 @@ size_t execute(const double *input_array, double *output_array,
         double *c0 = ck[level];
         double *c1 = ck[level + 1];
 #pragma omp parallel for
-        {
-          for (size_t block = 0; block < get_number_of_blocks(level + 1) - 1;
-               block++) {
-            cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &B[0], M,
-                        &c0[block * M], 1, 1, &c1[block * 2 * M], 1);
-            cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &B[MM], M,
-                        &c0[block * M], 1, 1, &c1[block * 2 * M + M], 1);
-            // flops += 4 * MM;
-          }
+        for (size_t block = 0; block < get_number_of_blocks(level + 1) - 1;
+             block++) {
+          cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &B[0], M,
+                      &c0[block * M], 1, 1, &c1[block * 2 * M], 1);
+          cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &B[MM], M,
+                      &c0[block * M], 1, 1, &c1[block * 2 * M + M], 1);
+          // flops += 4 * MM;
         }
         flops += (get_number_of_blocks(level + 1) - 1) * 4 * MM;
       }
@@ -1496,10 +1471,8 @@ size_t execute(const double *input_array, double *output_array,
     double *oap = &oa[0];
     if (stride == 1) {
 #pragma omp parallel for
-      {
-        for (size_t i = 0; i < N; i = i + 2) {
-          oaa[i] += oap[i / 2];
-        }
+      for (size_t i = 0; i < N; i = i + 2) {
+        oaa[i] += oap[i / 2];
       }
     } else {
       const size_t s2 = 2 * stride;
