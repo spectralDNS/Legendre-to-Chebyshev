@@ -28,7 +28,9 @@ if acc == '1'
 else
   omp = dependency('openmp', required : false)
   cblas = dependency('openblas')
-  deps = [cblas, fftw, omp]
+  message(get_option('libdir'))
+  fftwt = c.find_library('fftw3_threads', dirs : get_option('libdir'))
+  deps = [cblas, fftw, fftwt, omp]
   if omp.found()
     add_global_arguments(['-DOMP'], language : 'c')
   endif

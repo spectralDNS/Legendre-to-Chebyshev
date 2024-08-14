@@ -1,6 +1,5 @@
 prefix = get_option('prefix')
 lib_dir = prefix / get_option('libdir')
-message(lib_dir)
 l2c = executable('l2c',
                  'l2c.c',
                  include_directories : '../C/',
