@@ -414,9 +414,14 @@ void test_directM(size_t N, size_t repeat, size_t verbose, size_t s, size_t M,
 void test_dct0(size_t N, size_t repeat) {
   double *fun = (double *)fftw_malloc(N * sizeof(double));
   double *fun_hat = (double *)fftw_malloc(N * sizeof(double));
+  
+#ifdef OMP 
+  fftw_init_threads();
+  fftw_plan_with_nthreads(omp_get_max_threads());
+#endif
 
   fftw_plan plan =
-      fftw_plan_r2r_1d(N, fun, fun_hat, FFTW_REDFT10, FFTW_MEASURE);
+      fftw_plan_r2r_1d(N, fun, fun_hat, FFTW_REDFT10, FFTW_ESTIMATE);
 
   double min_time = 1e8;
   for (size_t i = 0; i < N; i++) {
@@ -430,10 +435,13 @@ void test_dct0(size_t N, size_t repeat) {
     double s1 = toc(g0);
     min_time = s1 < min_time ? s1 : min_time;
   }
-  printf("Time %2.6e %2.6e N = %ld\n", min_time, toc(t0) / repeat, N);
+  printf("Time N = %ld avg / min = %2.6e / %2.6e \n", N, toc(t0) / repeat, min_time);
   fftw_free(fun);
   fftw_free(fun_hat);
   fftw_destroy_plan(plan);
+#ifdef OMP
+  fftw_cleanup_threads();
+#endif
   return;
 }
 
@@ -613,28 +621,33 @@ void test_matvectri(size_t N, size_t repeat, size_t M, size_t lagrange,
   double *input_array = (double *)calloc(N, sizeof(double));
   double *output_array = (double *)calloc(N, sizeof(double));
   double min_time = 1e8;
+  uint64_t t0 = tic;
   for (size_t i = 0; i < repeat; i++) {
     uint64_t r0 = tic;
     for (size_t level = 0; level < fmmplan->L - 1; level++) {
       double *c0 = fmmplan->ck[level];
       double *c1 = fmmplan->ck[level + 1];
-      for (size_t block = 0; block < get_number_of_blocks(level + 1) - 1;
-           block++) {
-        if (lagrange == 0) {
-          matvectri(&fmmplan->BT[0], &c0[block * M], &c1[block * 2 * M], NULL,
-                    M, true);
-        } else {
-          cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &fmmplan->B[0], M,
-                      &c0[block * M], 1, 1, &c1[block * 2 * M], 1);
-          cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &fmmplan->B[M * M],
-                      M, &c0[block * M], 1, 1, &c1[block * 2 * M + M], 1);
+      //      #pragma omp parallel for
+      {
+        for (size_t block = 0; block < get_number_of_blocks(level + 1) - 1;
+             block++) {
+          if (lagrange == 0) {
+            matvectri(&fmmplan->BT[0], &c0[block * M], &c1[block * 2 * M],
+                      M, true);
+          } else {
+            cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1, &fmmplan->B[0], M,
+                        &c0[block * M], 1, 1, &c1[block * 2 * M], 1);
+            cblas_dgemv(CblasRowMajor, CblasNoTrans, M, M, 1,
+                        &fmmplan->B[M * M], M, &c0[block * M], 1, 1,
+                        &c1[block * 2 * M + M], 1);
+          }
         }
       }
     }
     double s1 = toc(r0);
     min_time = s1 < min_time ? s1 : min_time;
   }
-  printf("matvectri min time %2.6e\n", min_time);
+  printf("matvectri min time %2.6e total %2.6e\n", min_time, toc(t0) / repeat);
   free(input_array);
   free(output_array);
   free_fmm(fmmplan);
@@ -662,20 +675,68 @@ void test_init(size_t N, size_t maxs, size_t repeat, size_t direction, size_t M,
 }
 
 void test_lambda(size_t verbose) {
-  const double z0[3] = {1.7724538509055161e+00, 8.8622692545275805e-01, 6.6467019408956851e-01};
+  const double z0[3] = {1.7724538509055161e+00, 8.8622692545275805e-01,
+                        6.6467019408956851e-01};
   assert(fabs(Lambda(0) - z0[0]) < 1e-15);
   assert(fabs(Lambda(1) - z0[1]) < 1e-15);
   assert(fabs(Lambda(2) - z0[2]) < 1e-15);
   assert(fabs(Lambda(14.5) - _LambdaE(14.5)) < 1e-15);
   if (verbose > 1) {
-    double ulp = nextafter(Lambda(24.5), 1e8)-Lambda(24.5);
+    double ulp = nextafter(Lambda(24.5), 1e8) - Lambda(24.5);
     double err = Lambda(24.5) - _LambdaE(24.5);
     printf("Lambda(24.5)       = %2.18e\n", Lambda(24.5));
     printf("_Lambda0(24.5)     = %2.18e\n", _Lambda0(24.5));
     printf("LambdaE(24.5)      = %2.18e\n", _LambdaE(24.5));
     printf("Lambda(24.5) exact = %2.18e\n", 0.20100243720317808186742632);
-    printf("Error Lambda(24.5) = %2.6e, ulp = %2.6e, err = %2.1f ulp\n", err, ulp, err/ulp);
+    printf("Error Lambda(24.5) = %2.6e, ulp = %2.6e, err = %2.1f ulp\n", err,
+           ulp, err / ulp);
   }
+}
+
+void test_openmp(size_t N, size_t repeat, size_t verbose) {
+  double *input_array = (double *)malloc(N * sizeof(double));
+  double *output_array = (double *)malloc(N * sizeof(double));
+  double min_time = 1e8;
+
+  for (size_t i = 0; i < N; i++) {
+    input_array[i] = (double)i;
+  }
+  uint64_t t0 = tic;
+  for (size_t i = 0; i < repeat; i++) {
+    uint64_t r0 = tic;
+#pragma omp parallel for
+    {
+      for (size_t i = 0; i < N; i++)
+        output_array[i] = input_array[i] * M_2_PI;
+    }
+    double s1 = toc(r0);
+    min_time = s1 < min_time ? s1 : min_time;
+  }
+  printf("openmp min time %2.6e total %2.6e \n", min_time, toc(t0) / repeat);
+  free(input_array);
+  free(output_array);
+}
+
+void test_openmp2(size_t N, size_t repeat, size_t lagrange, size_t verbose) {
+  fmm_plan *fmmplan = create_fmm(N, 64, 18, 2, lagrange, 1, verbose);
+  const size_t s = fmmplan->s;
+  double *T = fmmplan->T;
+  double **wk = fmmplan->wk;
+  const size_t K = get_number_of_blocks(fmmplan->L - 1) * 2;
+  double min_time = 1e8;
+  uint64_t t0 = tic;
+//#pragma omp parallel for
+  {
+    for (size_t i = 0; i < repeat; i++) {
+      uint64_t r0 = tic;
+      cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, K, 18, s, 1.0,
+                  &fmmplan->ia[2 * s], s, &T[0], 18, 0, wk[fmmplan->L - 1], 18);
+      double s1 = toc(r0);
+      min_time = s1 < min_time ? s1 : min_time;
+    }
+  }
+  printf("cblas_dgmm min time %2.6e total %2.6e \n", min_time,
+         toc(t0) / repeat);
 }
 
 int main(int argc, char *argv[]) {
@@ -755,9 +816,13 @@ int main(int argc, char *argv[]) {
       exit(-1);
     }
   }
+
 #ifdef OMP
+  omp_set_dynamic(0);
   omp_set_num_threads(num_threads);
+  openblas_set_num_threads(num_threads);
 #endif
+
   switch (direction) {
   case 0:
   case 1:
@@ -802,6 +867,14 @@ int main(int argc, char *argv[]) {
 
   case 11:
     test_lambda(verbose);
+    break;
+
+  case 12:
+    test_openmp(N, repeat, verbose);
+    break;
+
+  case 13:
+    test_openmp2(N, repeat, lagrange, verbose);
     break;
 
   default:

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 model=1
-s0=64
+s0=32
 
 # Loop through input arguments n=2 to n=10
 output=$(l2c -N256 -d0 -r100000 -s32 -l$model -v0)

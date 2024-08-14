@@ -6,6 +6,6 @@ l2cprec = executable('l2cprec',
                      link_with : l2clib,
                      install_rpath : lib_dir,
                      install : true,
-                     dependencies : cblas) # hack link to get include directories
+                     dependencies : deps) # hack link to get include directories
 test('test multiprecision boost',
      l2cprec, args : ['-N100', '-m0', '-a0'])

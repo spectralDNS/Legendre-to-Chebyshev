@@ -4,19 +4,22 @@
 #include <complex.h>
 #include "fftw3.h"
 #include <assert.h>
-#ifdef __APPLE__
+#ifdef USE_ACCELERATE
+#define ACCELERATE_NEW_LAPACK
+#define ACCELERATE_LAPACK_ILP64
 #include <Accelerate/Accelerate.h>
-#endif
+#else
 #include <cblas.h>
+#endif
+#include <errno.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/resource.h>
 #include <time.h>
 #include <unistd.h>
-#include <sys/resource.h>
-#include <errno.h>
 #ifdef OMP
 #include <omp.h>
 #endif
@@ -91,8 +94,8 @@ size_t execute2D(const double *input_array, double *output_array,
                  fmm_plan_2d *fmmplan2d, size_t direction);
 size_t execute(const double *input_array, double *output_array,
                fmm_plan *fmmplan, size_t direction, const size_t stride);
-void matvectri(const double *A, const double *x, double *b, double *w,
-               const size_t m, const bool upper);
+void matvectri(const double *A, const double *x, double *b, const size_t m,
+               const bool upper);
 size_t get_number_of_blocks(const size_t level);
 size_t get_total_number_of_blocks(const size_t L);
 size_t get_h(const size_t level, const size_t L);

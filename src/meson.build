@@ -5,22 +5,33 @@ project('leg2cheb', 'c', 'cython', 'cpp',
           'warning_level=1',
           'optimization=3'])
 
+c = meson.get_compiler('c')
 cy = meson.get_compiler('cython')
 cpp = meson.get_compiler('cpp')
-cython = find_program(cy.cmd_array()[0])
 
-cblas = dependency('openblas')
-fftw = dependency('fftw3')
-omp = dependency('openmp', required : false)
-deps = [cblas, fftw, omp]
-#add_global_arguments(['-march=native', '-Ofast'], language : 'c')
 add_global_arguments(['-fomit-frame-pointer'], language : 'c')
 add_global_link_arguments(['-lm'], language : 'c')
-
-#add_global_link_arguments(['-framework', 'Accelerate'], language : 'c')
 add_global_arguments('-std=c++14', language : 'cpp')
-if omp.found()
-  add_global_arguments(['-DOMP'], language : 'c')
+fftw = dependency('fftw3')
+
+acc = '0'
+if host_machine.system() == 'darwin' and host_machine.cpu_family() == 'aarch64'
+  acc = run_command('sh', '-c', 'echo $USE_ACCELERATE', check : false).stdout().strip()
+endif
+
+if acc == '1'
+  add_global_link_arguments(['-framework', 'Accelerate'], language : 'c')
+  add_global_arguments(['-DUSE_ACCELERATE'], language : 'c')
+  add_global_arguments(['-DUSE_ACCELERATE'], language : 'cpp') 
+  #boost = dependency('boost')
+  deps = [fftw]
+else
+  omp = dependency('openmp', required : false)
+  cblas = dependency('openblas')
+  deps = [cblas, fftw, omp]
+  if omp.found()
+    add_global_arguments(['-DOMP'], language : 'c')
+  endif
 endif
 
 subdir('C')
@@ -30,6 +41,7 @@ subdir('bin')
 subdir('python')
 subdir('multiprec/python')
 subdir('multiprec/C++')
+#subdir('threads')
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libraries : l2clib,

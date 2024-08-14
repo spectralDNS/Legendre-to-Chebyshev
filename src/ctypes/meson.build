@@ -1,3 +1,4 @@
+# needs LD_LIBRARY_PATH and/or DYLD_LIBRARY_PATH
 py = import('python').find_installation()
 py.install_sources(['l2ctypes.py'])
 
