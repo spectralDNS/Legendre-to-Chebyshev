@@ -15,5 +15,5 @@
         ]
       }
     },
-    "postCreateCommand": "echo 'source activate l2copenblas;export PATH=/workspaces/Legendre-to-Chebyshev/src/build-install/bin:$PATH;export LD_LIBRARY_PATH=/workspaces/Legendre-to-Chebyshev/src/build-install/lib:$LD_LIBRARY_PATH' >> ~/.bashrc"
+    "postCreateCommand": "echo 'source activate l2copenblas;export PATH=/workspaces/Legendre-to-Chebyshev/src/build-install/bin:$PATH;export LD_LIBRARY_PATH=/workspaces/Legendre-to-Chebyshev/src/build-install/lib:$LD_LIBRARY_PATH;export PYTHONPATH=/workspaces/Legendre-to-Chebyshev/src/build-install/lib/python$(python --version 2>&1 | awk '{print $2}' | awk -F. '{print $1 "." $2}')/site-packages:$PYTHONPATH' >> ~/.bashrc"
   }
