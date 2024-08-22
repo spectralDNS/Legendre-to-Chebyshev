@@ -1,16 +1,16 @@
+"""This file is used to compute Table 1 in the paper
+"""
 import subprocess
 import re
 import numpy as np
-import matplotlib.pyplot as plt
 
 s = 32
 arr = []
-#number = "([0-9]+.[0-9]+e[+-][0-9]+)"
 number = r'[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?'
 la = "\\begin{tabular}{ccccc}\n"
 la += " N & L2C (m) & L2C (n) & C2L (m) & C2L (n) \\\\ \n"
-la += "\\hline \\n"
-for n in range(1, 4):
+la += "\\hline \n"
+for n in range(1, 6):
     N = s * 2**(n+2)
     h0 = subprocess.check_output(f"l2cprec -N{N} -d0 -a1 -n1 -R1", shell=True)
     h1 = subprocess.check_output(f"l2cprec -N{N} -d1 -a1 -n1 -R1", shell=True)
@@ -22,7 +22,3 @@ la += "\\hline \n"
 la += "\\end{tabular}"
 print(la)
 
-a = np.array(arr)
-plt.loglog(a[:, 0], a[:, 1], 'b', a[:, 0], a[:, 3], 'b:')
-plt.loglog(a[:, 0], a[:, 2], 'r', a[:, 0], a[:, 4], 'r:')
-plt.show()

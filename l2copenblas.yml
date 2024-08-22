@@ -1,0 +1,26 @@
+name: l2copenblas
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - pip
+  - numpy
+  - cython
+  - fftw
+  - meson
+  - ninja
+  - openblas
+  - compilers
+  - pkg-config
+  - mpmath
+  - boost
+  - mpi4py-fft
+  - pytest
+  - scipy
+  - numba
+  - sympy
+
+variables:
+  USE_ACCELERATE: "0"

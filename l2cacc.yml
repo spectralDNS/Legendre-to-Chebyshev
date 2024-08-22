@@ -1,4 +1,4 @@
-name: l2c
+name: l2cacc
 
 channels:
   - conda-forge
@@ -7,16 +7,18 @@ channels:
 dependencies:
   - pip
   - numpy
-  - numba
   - cython
   - fftw
-  - mpi4py-fft
-  - openblas
   - meson
   - ninja
   - pkg-config
   - mpmath
   - boost
+  - mpi4py-fft
   - pytest
   - scipy
+  - numba
   - sympy
+
+variables:
+  USE_ACCELERATE : "1"

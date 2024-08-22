@@ -1,3 +1,7 @@
+"""This file is used to compute figure 3 in the paper
+
+It also creates a latex table of the same data that is not used.
+"""
 import subprocess
 import re
 import numpy as np
@@ -38,5 +42,5 @@ plt.ylim([1e-16, 1e-10])
 plt.legend(['r = 0', 'r = 1/2'])
 plt.ylabel('$E_{\\infty}$')
 plt.xlabel('N')
-plt.savefig('accuracy_roundtrip.png')
+plt.savefig('figure3.png')
 plt.show()

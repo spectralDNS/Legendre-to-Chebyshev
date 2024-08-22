@@ -414,14 +414,24 @@ void test_directM(size_t N, size_t repeat, size_t verbose, size_t s, size_t M,
 void test_dct0(size_t N, size_t repeat) {
   double *fun = (double *)fftw_malloc(N * sizeof(double));
   double *fun_hat = (double *)fftw_malloc(N * sizeof(double));
+  char *useacc = getenv("USE_ACCELERATE");
+  char filename[128]; 
+  const char *prefix = "fftw_wisdom_acc_";
+  const char *suffix = ".dat";
+  snprintf(filename, sizeof(filename), "%s%s%s", prefix, useacc, suffix);
 
 #ifdef OMP
   fftw_init_threads();
   fftw_plan_with_nthreads(omp_get_max_threads());
 #endif
 
+  // Load the wisdom from a file if it exists
+  if (fftw_import_wisdom_from_filename(filename) == 0) {
+    fprintf(stderr, "Failed to load wisdom from file\n");
+  }
+
   fftw_plan plan =
-      fftw_plan_r2r_1d(N, fun, fun_hat, FFTW_REDFT10, FFTW_ESTIMATE);
+      fftw_plan_r2r_1d(N, fun, fun_hat, FFTW_REDFT10, FFTW_MEASURE);
 
   double min_time = 1e8;
   for (size_t i = 0; i < N; i++) {
@@ -437,9 +447,15 @@ void test_dct0(size_t N, size_t repeat) {
   }
   printf("Time N = %ld avg / min = %2.6e / %2.6e \n", N, toc(t0) / repeat,
          min_time);
+
+  // Save the wisdom to a file
+  if (fftw_export_wisdom_to_filename(filename) == 0) {
+    fprintf(stderr, "Failed to save wisdom to file\n");
+  }
   fftw_free(fun);
   fftw_free(fun_hat);
   fftw_destroy_plan(plan);
+  fftw_cleanup();
 #ifdef OMP
   fftw_cleanup_threads();
 #endif
@@ -741,7 +757,7 @@ void test_openmp2(size_t N, size_t repeat, size_t lagrange, size_t verbose) {
 int main(int argc, char *argv[]) {
   int opt;
   size_t N = 512;
-  size_t maxs = 64;
+  size_t maxs = 32;
   size_t verbose = 2;
   size_t num_threads = 1;
   size_t lagrange = 0;

@@ -1,0 +1,19 @@
+{
+    "image": "mcr.microsoft.com/devcontainers/universal:2",
+    "hostRequirements": {
+      "cpus": 4
+    },
+    "waitFor": "onCreateCommand",
+    "updateContentCommand": ["/bin/bash", "-c", "conda env create --file l2copenblas.yml && source activate l2copenblas && cd src && ./build_meson.sh"],
+    "customizations": {
+      "codespaces": {
+        "openFiles": []
+      },
+      "vscode": {
+        "extensions": [
+          "ms-python.python"
+        ]
+      }
+    },
+    "postCreateCommand": "conda init"
+  }

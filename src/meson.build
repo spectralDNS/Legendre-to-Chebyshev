@@ -23,12 +23,10 @@ if acc == '1'
   add_global_link_arguments(['-framework', 'Accelerate'], language : 'c')
   add_global_arguments(['-DUSE_ACCELERATE'], language : 'c')
   add_global_arguments(['-DUSE_ACCELERATE'], language : 'cpp') 
-  #boost = dependency('boost')
   deps = [fftw]
 else
   omp = dependency('openmp', required : false)
   cblas = dependency('openblas')
-  message(get_option('libdir'))
   fftwt = c.find_library('fftw3_threads', dirs : get_option('libdir'))
   deps = [cblas, fftw, fftwt, omp]
   if omp.found()
