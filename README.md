@@ -54,6 +54,8 @@ and you should then be ready to run the l2c executable, for example
 
 to run a L2C followed by a C2L, checking for accuracy.
 
+Se also the [github actions setup](https://github.com/spectralDNS/Legendre-to-Chebyshev/blob/main/.github/workflows/l2c.yml), which installs the `l2copenblas` environment and does all necessary steps to install and test the code.
+
 # Codespace
 Another simple way to test this code is to create a codespace. The l2copenblas.yml file in the root folder will then make sure that the codespace creates a conda environment with all necessary dependencies, including OpenBlas and FFTW, already installed. Just press the codespace button and wait awhile for the environment to build. Then enable the environment and run some tests or test the executable `l2c`
 
