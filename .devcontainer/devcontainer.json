@@ -15,5 +15,5 @@
         ]
       }
     },
-    "postCreateCommand": "./setupenv.sh"
+    "postCreateCommand": "./.devcontainer/setupenv.sh"
   }
