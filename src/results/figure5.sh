@@ -11,7 +11,7 @@
 # new generated python file (see filename below).
 
 rerun_fmm="no"
-rerun_dct="yes"
+rerun_dct="no"
 smax=32
 model=0
 

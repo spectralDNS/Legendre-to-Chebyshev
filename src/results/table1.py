@@ -10,7 +10,7 @@ number = r'[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?'
 la = "\\begin{tabular}{ccccc}\n"
 la += " N & L2C (m) & L2C (n) & C2L (m) & C2L (n) \\\\ \n"
 la += "\\hline \n"
-for n in range(1, 6):
+for n in range(1, 9):
     N = s * 2**(n+2)
     h0 = subprocess.check_output(f"l2cprec -N{N} -d0 -a1 -n1 -R1", shell=True)
     h1 = subprocess.check_output(f"l2cprec -N{N} -d1 -a1 -n1 -R1", shell=True)
