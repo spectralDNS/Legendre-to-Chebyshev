@@ -66,4 +66,5 @@ Another simple way to test this code is to create a codespace. The l2copenblas.y
      cd results
      python table1.py # Create Table 1 in the paper
      python figure3.py # Create Figure 3 in the paper
-     etc..
+     ./figure4.sh # Create Figure 4a and 4b
+     ./figure5.sh # Create Figure 5
