@@ -218,7 +218,7 @@ ax1.legend(['2 cores (L2C)', '4 cores (L2C)', '8 cores (L2C)',
             '2 cores (DCT)', '4 cores (DCT)', '8 cores (DCT)'])
 ax1.set_ylabel('Speedup')
 ax1.set_xlabel('N')
-plt.savefig('threadscaling.png')
+plt.savefig('figure5.png')
 plt.show()
 EOF
 
