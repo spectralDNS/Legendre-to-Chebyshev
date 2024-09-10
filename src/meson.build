@@ -39,7 +39,6 @@ endif
 subdir('C')
 subdir('cython')
 if not (conda_build == '1')
-  message(conda_build)
   subdir('python')
   subdir('ctypes')
   subdir('bin')
@@ -49,6 +48,6 @@ endif
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libraries : l2clib,
-                 version : '1.0.1',
+                 version : '1.0.2',
                  name : 'leg2cheb',
                  description : 'A Library to transform between Legendre and Chebyshev coefficients')
