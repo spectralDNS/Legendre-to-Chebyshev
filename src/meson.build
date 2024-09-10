@@ -8,7 +8,8 @@ project('leg2cheb', 'c', 'cython', 'cpp',
 c = meson.get_compiler('c')
 cy = meson.get_compiler('cython')
 cpp = meson.get_compiler('cpp')
-conda_build = getenv('CONDA_BUILD', '0') == '1'
+
+conda_build = run_command('sh', '-c', 'echo $CONDA_BUILD', check : false).stdout().strip()
 
 add_global_arguments(['-fomit-frame-pointer'], language : 'c')
 add_global_link_arguments(['-lm'], language : 'c')
@@ -37,7 +38,8 @@ endif
 
 subdir('C')
 subdir('cython')
-if not conda_build 
+if not (conda_build == '1')
+  message(conda_build)
   subdir('python')
   subdir('ctypes')
   subdir('bin')
