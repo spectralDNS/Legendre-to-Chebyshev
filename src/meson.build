@@ -8,6 +8,7 @@ project('leg2cheb', 'c', 'cython', 'cpp',
 c = meson.get_compiler('c')
 cy = meson.get_compiler('cython')
 cpp = meson.get_compiler('cpp')
+conda_build = getenv('CONDA_BUILD', '0') == '1'
 
 add_global_arguments(['-fomit-frame-pointer'], language : 'c')
 add_global_link_arguments(['-lm'], language : 'c')
@@ -36,15 +37,16 @@ endif
 
 subdir('C')
 subdir('cython')
-subdir('ctypes')
-subdir('bin')
-subdir('python')
-subdir('multiprec/python')
-subdir('multiprec/C++')
-#subdir('threads')
+if not conda_build 
+  subdir('python')
+  subdir('ctypes')
+  subdir('bin')
+  subdir('multiprec/python')
+  subdir('multiprec/C++')
+endif 
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libraries : l2clib,
-                 version : '1.0',
+                 version : '1.0.1',
                  name : 'leg2cheb',
                  description : 'A Library to transform between Legendre and Chebyshev coefficients')
