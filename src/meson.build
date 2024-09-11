@@ -50,6 +50,6 @@ endif
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libraries : l2clib,
-                 version : '1.0.2',
+                 version : '1.0.3',
                  name : 'leg2cheb',
                  description : 'A Library to transform between Legendre and Chebyshev coefficients')
