@@ -4,7 +4,7 @@ l2c = executable('l2c',
                  dependencies : deps,
                  install : true,
                  #c_args : ['-march=native', '-Ofast'],
-                 install_rpath : join_paths(get_option('prefix'), get_option('libdir'))),
+                 install_rpath : join_paths(get_option('prefix'), get_option('libdir')),
                  link_with : l2clib)
 
 test('test l2c forward-backward N1000', l2c, args : ['-N1000', '-d2'])
