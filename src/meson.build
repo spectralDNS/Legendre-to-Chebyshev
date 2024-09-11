@@ -29,9 +29,7 @@ if acc == '1'
 else
   omp = dependency('openmp', required : false)
   cblas = dependency('openblas')
-  prefix = get_option('prefix')
-  lib_dir = prefix / get_option('libdir')
-  fftwt = c.find_library('fftw3_threads', dirs : lib_dir)
+  fftwt = c.find_library('fftw3_threads', dirs : join_paths(get_option('prefix'), get_option('libdir'))))
   deps = [cblas, fftw, fftwt, omp]
   if omp.found()
     add_global_arguments(['-DOMP'], language : 'c')
@@ -50,6 +48,6 @@ endif
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libraries : l2clib,
-                 version : '1.0.3',
+                 version : '1.1',
                  name : 'leg2cheb',
                  description : 'A Library to transform between Legendre and Chebyshev coefficients')
