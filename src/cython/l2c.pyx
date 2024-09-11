@@ -17,15 +17,15 @@ cpdef enum:
 cdef class Leg2Cheb:
     """Class for Legendre/Chebyshev transforms
 
-    A fast multipole algorithm similar to::
+    A fast multipole algorithm::
 
-        B. K. Alpert and V. Rokhlin, A fast algorithm for the evaluation of
-        Legendre expansions, 389 SIAM Journal on Scientific and Statistical
-        Computing, 12 (1991), pp. 158–179, https://doi.390org/10.1137/0912009.391
+        M Mortensen "A faster multipole Legendre-Chebyshev transform", to be 
+        published in SIAM Journal on Scientific Computing. See 
+        https://github.com/spectralDNS/Legendre-to-Chebyshev/blob/main/FMM_paper.pdf
 
     Parameters
     ----------
-    input_array : Numpy array of floats
+    input_array : Numpy array of floats 
     output_array : Numpy array of floats
     M : int, optional
         Rank of hierarchical matrices
