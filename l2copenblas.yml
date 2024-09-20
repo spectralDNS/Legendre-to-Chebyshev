@@ -12,9 +12,7 @@ dependencies:
   - meson
   - ninja
   - openblas
-  - {{ compiler('c') }}
-  - {{ compiler('cxx') }} 
-  - {{ stdlib('c') }}
+  - compilers
   - pkg-config
   - mpmath
   - boost
