@@ -53,8 +53,8 @@ cdef class Leg2Cheb:
         np.ndarray _output_array
 
     def __cinit__(self, input_array : np.ndarray, output_array : np.ndarray,
-                  M : size_t=18, maxs : size_t=36, direction : size_t=BOTH,
-                  lagrange : size_t=0, precompute : size_t=0, verbose : size_t=1):
+                  M : np.uint64_t=18, maxs : np.uint64_t=36, direction : np.uint64_t=BOTH,
+                  lagrange : np.uint64_t=0, precompute : np.uint64_t=0, verbose : np.uint64_t=1):
         self.N = input_array.shape[0]
         self.direction = direction
         self.precompute = precompute

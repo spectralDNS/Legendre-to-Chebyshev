@@ -1,5 +1,5 @@
 project('leg2cheb', 'c', 'cython', 'cpp',
-        version : '1.1.1',
+        version : '1.1.2',
         default_options : [
           'buildtype=release',
           'warning_level=1',
@@ -48,6 +48,6 @@ endif
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libraries : l2clib,
-                 version : '1.1.1',
+                 version : '1.1.2',
                  name : 'leg2cheb',
                  description : 'A Library to transform between Legendre and Chebyshev coefficients')
