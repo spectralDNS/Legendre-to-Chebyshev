@@ -15,7 +15,6 @@ py.extension_module(
     'l2c.pyx',
     install : true,
     install_dir : get_option('prefix') / 'lib' / pyversion / 'site-packages',
-    c_args : ['-march=native'],
     include_directories: incdir_numpy,
     dependencies : [dep_py, deps],
     link_with : l2clib
